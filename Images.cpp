@@ -17,7 +17,7 @@ cv::Mat * LoadImages(char* imageLocation,char*imageNames[],int imageCount){
         images[i] = cv::imread(filename, cv::IMREAD_ANYCOLOR);
         if (images[i].empty()) {
             std::cerr << "Failed to load image: " << filename << std::endl;
-            exit(1);
+            exit(EXIT_FAILURE);
         }else{
             std::cout << "Successfully loaded image: " << filename << std::endl;
         }
