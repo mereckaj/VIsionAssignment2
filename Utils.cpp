@@ -26,13 +26,13 @@ cv::Mat StretchImage( cv::Mat& image )
     // Stretch values using a lookup-table
     int entries(256);
     cv::Mat lut(1,entries,CV_8U);
-    for (int i=0; (i<256); i++)
+    for (size_t i=0; (i<256); i++)
         lut.at<uchar>(i) = (255*i)/max;
     cv::LUT(image,lut,result);
 
     return result;
 }
-cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing, cv::Scalar passed_colour/*=-1.0*/ )
+cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing)
 {
     cv::Mat result( (image1.rows > image2.rows) ? image1.rows : image2.rows,
                 image1.cols + image2.cols + spacing,

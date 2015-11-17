@@ -53,7 +53,6 @@ void LoadAllImages(){
  */
 int main() {
     cv::Mat dots;
-    int threshold_value = 20;
     LoadAllImages();
     for(int imageIndex = 0; imageIndex < NUMBER_OF_VIEWS;imageIndex++){
         PointDetector* pointDetector;
@@ -61,4 +60,5 @@ int main() {
         dots = pointDetector->DetectPoints();
         DisplayImage("",dots,true);
     }
+    return EXIT_SUCCESS;
 }

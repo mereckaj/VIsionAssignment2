@@ -13,7 +13,7 @@ cv::Mat * LoadImages(const std::string imageLocation,std::vector<std::string> im
     debugMessage("Loading: " + std::to_string(imageNames.size()) + " images from: " + imageLocation);
 
     cv::Mat *images = new cv::Mat[imageNames.size()];
-    for (int i = 0; i < imageNames.size(); i++) {
+    for (size_t i = 0; i < imageNames.size(); i++) {
 
         std::string filename(imageLocation);
         filename.append(imageNames[i]);

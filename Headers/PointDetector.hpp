@@ -15,7 +15,7 @@ private:
     cv::Mat Thinning(cv::Mat);
     cv::Mat ThinningIterator(cv::Mat,int);
     cv::Mat BackProjectBluePixels(cv::Mat backProjectSample);
-    cv::Mat ThresholdDilateErode(cv::Mat backProjectSample, int thresholdValue);
+    cv::Mat ThresholdDilateErode(int thresholdValue);
 };
 
 #endif //VISIONASSIGNMENT2_POINTDETECTOR_H

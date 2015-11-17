@@ -22,22 +22,22 @@ cv::Mat PointDetector::DetectPoints(){
     mThin = Thinning(mBackProjectionProbabilty);
     return mThin;
 }
-cv::Mat PointDetector::Thinning(cv::Mat im) {
+cv::Mat PointDetector::Thinning(cv::Mat image) {
     /*
      * Source: http://opencv-code.com/quick-tips/implementation-of-thinning-algorithm-in-opencv/
      */
-    im /= 255;
-    cv::Mat prev = cv::Mat::zeros(im.size(), CV_8UC1);
+    image /= 255;
+    cv::Mat prev = cv::Mat::zeros(image.size(), CV_8UC1);
     cv::Mat diff;
     do {
-        ThinningIterator(im, 0);
-        ThinningIterator(im, 1);
-        cv::absdiff(im, prev, diff);
-        im.copyTo(prev);
+        ThinningIterator(image, 0);
+        ThinningIterator(image, 1);
+        cv::absdiff(image, prev, diff);
+        image.copyTo(prev);
     }
     while (cv::countNonZero(diff) > 0);
-    im *= 255;
-    return im;
+    image *= 255;
+    return image;
 }
 
     /**
@@ -92,7 +92,7 @@ cv::Mat PointDetector::BackProjectBluePixels(cv::Mat backProjectSample){
     back_projection_probabilities = StretchImage( back_projection_probabilities );
     return back_projection_probabilities;
 }
-cv::Mat PointDetector::ThresholdDilateErode(cv::Mat backProjectSample,int thresholdValue){
+cv::Mat PointDetector::ThresholdDilateErode(int thresholdValue){
     cv::Mat binary,eroded, dilated;
     cv::threshold(mImage,binary,thresholdValue,256,CV_THRESH_BINARY);
     cv::erode(binary,eroded,cv::Mat());
