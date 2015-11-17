@@ -29,3 +29,6 @@
 
 # Target executable
 main
+
+# Clion
+.idea

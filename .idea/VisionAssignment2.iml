@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/Histogram.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Histogram.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Images.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Images.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Images.hpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/PointDetector.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/PointDetector.h" isTestSource="false" />
