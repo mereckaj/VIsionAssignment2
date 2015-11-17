@@ -7,14 +7,14 @@
 
 class PointDetector{
 public:
-    PointDetector(cv::Mat);
+    PointDetector(cv::Mat srcImage, cv::Mat backProjectionSample);
     ~PointDetector();
-    cv::Mat Thinning(cv::Mat);
+    cv::Mat DetectPoints();
 private:
-    cv::Mat mImage,mHlsImage;
+    cv::Mat mImage,mBackProjectionProbabilty,mHlsImage,mBackProjectionSample,mThin;
+    cv::Mat Thinning(cv::Mat);
     cv::Mat ThinningIterator(cv::Mat,int);
     cv::Mat BackProjectBluePixels(cv::Mat backProjectSample);
-
     cv::Mat ThresholdDilateErode(cv::Mat backProjectSample, int thresholdValue);
 };
 

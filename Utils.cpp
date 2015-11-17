@@ -4,6 +4,7 @@
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core.hpp>
+#include <iostream>
 #include "Utils.h"
 cv::Mat StretchImage( cv::Mat& image )
 {
@@ -48,4 +49,8 @@ cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing, c
     imageROI = result(cv::Rect(image1.cols+spacing,0,image2.cols,image2.rows));
     image2.copyTo(imageROI);
     return result;
+}
+
+void debugMessage(std::string s){
+    std::cout << s << std::endl;
 }

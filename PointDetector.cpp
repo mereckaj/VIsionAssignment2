@@ -13,10 +13,15 @@ PointDetector::~PointDetector() {
     mImage.~Mat();
 }
 
-PointDetector::PointDetector(cv::Mat mat) {
-    PointDetector::mImage = mat;
+PointDetector::PointDetector(cv::Mat srcImage,cv::Mat backProjectionSample) {
+    mImage = srcImage;
+    mBackProjectionSample = backProjectionSample;
 }
-
+cv::Mat PointDetector::DetectPoints(){
+    mBackProjectionProbabilty = BackProjectBluePixels(mBackProjectionSample);
+    mThin = Thinning(mBackProjectionProbabilty);
+    return mThin;
+}
 cv::Mat PointDetector::Thinning(cv::Mat im) {
     /*
      * Source: http://opencv-code.com/quick-tips/implementation-of-thinning-algorithm-in-opencv/
@@ -25,8 +30,8 @@ cv::Mat PointDetector::Thinning(cv::Mat im) {
     cv::Mat prev = cv::Mat::zeros(im.size(), CV_8UC1);
     cv::Mat diff;
     do {
-        PointDetector::ThinningIterator(im, 0);
-        PointDetector::ThinningIterator(im, 1);
+        ThinningIterator(im, 0);
+        ThinningIterator(im, 1);
         cv::absdiff(im, prev, diff);
         im.copyTo(prev);
     }
@@ -67,11 +72,13 @@ cv::Mat PointDetector::ThinningIterator(cv::Mat im, int iter) {
             int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
             int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
 
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
-                marker.at<uchar>(i,j) = 1;
+            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0) {
+                marker.at<uchar>(i, j) = 1;
+            }
         }
     }
     im &= ~marker;
+    return im;
 }
 
 
