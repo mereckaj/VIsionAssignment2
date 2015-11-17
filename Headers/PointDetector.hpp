@@ -7,15 +7,20 @@
 
 class PointDetector{
 public:
-    PointDetector(cv::Mat srcImage, cv::Mat backProjectionSample);
+    PointDetector();
+
+    PointDetector(cv::Mat srcImage);
+
     ~PointDetector();
     cv::Mat DetectPoints();
+    void Show(cv::Mat img);
 private:
-    cv::Mat mImage,mBackProjectionProbabilty,mHlsImage,mBackProjectionSample,mThin;
-    cv::Mat Thinning(cv::Mat);
+    cv::Mat mImage,mHlsImage,mBinary,mDilated,mEroded;
+    std::string mWindowTitle;
     cv::Mat ThinningIterator(cv::Mat,int);
-    cv::Mat BackProjectBluePixels(cv::Mat backProjectSample);
     cv::Mat ThresholdDilateErode(int thresholdValue);
+    cv::Mat Thinning(cv::Mat);
+    cv::Mat BackProjectBluePixels(cv::Mat backProjectSample, int binCount);
 };
 
 #endif //VISIONASSIGNMENT2_POINTDETECTOR_H

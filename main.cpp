@@ -10,6 +10,7 @@
 #define NUMBER_OF_VIEWS 50
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
+
 const std::string IMAGE_LOCATION = "/home/mereckaj/Dev/ClionProjects/VisionAssignment2/Images/";
 const std::vector<std::string> viewFiles =
         {
@@ -38,6 +39,7 @@ const std::vector<std::string> backProjectFiles =
         {
             "BackProjectSample.png"
         };
+
 void LoadAllImages(){
     pageImages = LoadImages(IMAGE_LOCATION,pageFiles);
     viewImages = LoadImages(IMAGE_LOCATION,viewFiles);
@@ -54,11 +56,11 @@ void LoadAllImages(){
 int main() {
     cv::Mat dots;
     LoadAllImages();
-    for(int imageIndex = 0; imageIndex < NUMBER_OF_VIEWS;imageIndex++){
-        PointDetector* pointDetector;
-        pointDetector = new PointDetector(viewImages[imageIndex],backProjectSample[0]);
-        dots = pointDetector->DetectPoints();
-        DisplayImage("",dots,true);
+    for(int imageIndex = 0; imageIndex < 1;imageIndex++){
+        PointDetector pointDetector;
+//        pointDetector = new PointDetector(viewImages[imageIndex],backProjectSample[0],"Test");
+//        pointDetector->DetectPoints();
+//        pointDetector->Show(pointDetector->mThin);
     }
     return EXIT_SUCCESS;
 }
