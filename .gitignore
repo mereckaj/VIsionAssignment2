@@ -31,4 +31,4 @@
 main
 
 # Clion
-.idea
+.idea/*
