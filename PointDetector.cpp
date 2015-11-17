@@ -5,8 +5,8 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include "PointDetector.h"
-#include "Utils.h"
+#include "Headers/PointDetector.hpp"
+#include "Headers/Utils.hpp"
 #include "Histogram.cpp"
 
 PointDetector::~PointDetector() {

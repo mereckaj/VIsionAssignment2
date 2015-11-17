@@ -5,7 +5,7 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core.hpp>
 #include <iostream>
-#include "Utils.h"
+#include "Headers/Utils.hpp"
 cv::Mat StretchImage( cv::Mat& image )
 {
     cv::Mat result = image.clone();

@@ -2,19 +2,16 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include "Images.hpp"
-#include "Utils.h"
-#include "PointDetector.h"
+#include "Headers/Images.hpp"
+#include "Headers/Utils.hpp"
+#include "Headers/PointDetector.hpp"
 
 #define NUMBER_OF_PAGES 13
 #define NUMBER_OF_VIEWS 50
-#define NUMBER_OF_BINS 256
-
-void debugMessage(std::string s);
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
-char * IMAGE_LOCATION = "/home/mereckaj/Dev/ClionProjects/VisionAssignment2/Images/";
-char * viewFiles[] =
+const std::string IMAGE_LOCATION = "/home/mereckaj/Dev/ClionProjects/VisionAssignment2/Images/";
+const std::vector<std::string> viewFiles =
         {
             "BookView02.JPG","BookView03.JPG","BookView04.JPG","BookView05.JPG",
             "BookView06.JPG","BookView07.JPG","BookView08.JPG","BookView09.JPG",
@@ -30,21 +27,21 @@ char * viewFiles[] =
             "BookView45.JPG","BookView46.JPG","BookView47.JPG","BookView48.JPG",
             "BookView49.JPG","BookView50.JPG"
         };
-char * pageFiles[] =
+const std::vector<std::string> pageFiles =
         {
             "Page01.jpg","Page02.jpg","Page03.jpg","Page04.jpg",
             "Page05.jpg","Page06.jpg","Page07.jpg","Page08.jpg",
             "Page09.jpg","Page10.jpg","Page11.jpg","Page12.jpg",
             "Page13.jpg"
         };
-char * backProjectFiles[] =
+const std::vector<std::string> backProjectFiles =
         {
             "BackProjectSample.png"
         };
 void LoadAllImages(){
-    pageImages = LoadImages(IMAGE_LOCATION,pageFiles,NUMBER_OF_PAGES);
-    viewImages = LoadImages(IMAGE_LOCATION,viewFiles,NUMBER_OF_VIEWS);
-    backProjectSample = LoadImages(IMAGE_LOCATION,backProjectFiles,1);
+    pageImages = LoadImages(IMAGE_LOCATION,pageFiles);
+    viewImages = LoadImages(IMAGE_LOCATION,viewFiles);
+    backProjectSample = LoadImages(IMAGE_LOCATION,backProjectFiles);
     debugMessage("Loaded all images successfully");
 }
 /*
