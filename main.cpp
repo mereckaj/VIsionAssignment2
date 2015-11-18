@@ -58,10 +58,16 @@ int main() {
     LoadAllImages();
     //TODO: find reason for crash
     PointDetector pd;
-    cv::Mat dots,dot;
+    cv::Mat page,masked
+    ;
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
-        PageDetector pd(viewImages[imageIndex]);
-        pd.DetectPage(backProjectSample[1]);
+        PageDetector pad(viewImages[imageIndex]);
+        page = pad.DetectPage(backProjectSample[0]);
+        masked = pad.ApplyMask(page);
+//        pad.Show(masked);
+        PointDetector pd(masked,backProjectSample[0],15,std::to_string(imageIndex));
+        pd.DetectPoints();
+
     }
     return EXIT_SUCCESS;
 }

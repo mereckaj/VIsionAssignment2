@@ -12,10 +12,7 @@ public:
     PointDetector(cv::Mat,cv::Mat,int,std::string);
     ~PointDetector();
     void Show(cv::Mat img);
-
-    //TODO: Make non-public
-    cv::Mat DetectPoints();
-    cv::Mat DropOutliers(cv::Mat);
+    std::vector<std::vector<cv::Point>> DetectPoints();
 
 private:
     cv::Mat mImage,mHlsImage,mBackProjectSampleHLS,mBinary,mDilated,mEroded,mBackProjectionSample,mThin;

@@ -12,6 +12,7 @@
 #include "Headers/Utils.hpp"
 #include "Histogram.cpp"
 
+cv::RNG rng(12345);
 PointDetector::~PointDetector() {
     mImage.~Mat();
     mHlsImage.~Mat();
@@ -31,17 +32,27 @@ PointDetector::PointDetector(cv::Mat srcImage,cv::Mat backProjectionSample,int t
     mThresholdValue = thresholdValue;
     mWindowTitle = windowTitle;
 }
-cv::Mat PointDetector::DetectPoints(){
+std::vector<std::vector<cv::Point>> PointDetector::DetectPoints(){
     debugMessage("Detect start");
-    cv::Mat backProjectSample,binary,thin,ed,d2,t2;
+    cv::Mat backProjectSample,binary,thin,ed,d2,t2,lines,liness;
     backProjectSample = BackProjectBluePixels(mBinCount);
     binary = Threshold(backProjectSample);
     ed = ErodeDilate(binary);
     thin = Thinning(ed);
     d2 = DilateErode(thin);
     t2 = Thinning(d2);
-    debugMessage("Detect end");
-    return t2;
+
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(t2,contours,hierarchy,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+    cv::Mat drawing = cv::Mat::zeros( t2.size(), CV_8UC3 );
+    for( int i = 0; i< contours.size(); i++ )
+    {
+        cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+        drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+    }
+    Show(drawing);
+    return contours;
 }
 /**
  * Perform one thinning iteration.
@@ -155,5 +166,3 @@ void PointDetector::Show(cv::Mat img){
         cv::waitKey(0);
     }
 }
-
-
