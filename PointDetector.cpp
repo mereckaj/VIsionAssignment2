@@ -25,12 +25,14 @@ PointDetector::PointDetector(){
     mBinCount = 8;
 }
 PointDetector::PointDetector(cv::Mat srcImage,cv::Mat backProjectionSample,int thresholdValue,std::string windowTitle) : PointDetector() {
+    debugMessage("Construct");
     mImage = srcImage;
     mBackProjectionSample = backProjectionSample;
     mThresholdValue = thresholdValue;
     mWindowTitle = windowTitle;
 }
 cv::Mat PointDetector::DetectPoints(){
+    debugMessage("Detect start");
     cv::Mat backProjectSample,binary,thin,ed,d2,t2;
     backProjectSample = BackProjectBluePixels(mBinCount);
     binary = Threshold(backProjectSample);
@@ -38,8 +40,8 @@ cv::Mat PointDetector::DetectPoints(){
     thin = Thinning(ed);
     d2 = DilateErode(thin);
     t2 = Thinning(d2);
+    debugMessage("Detect end");
     return t2;
-
 }
 /**
  * Perform one thinning iteration.
@@ -154,25 +156,4 @@ void PointDetector::Show(cv::Mat img){
     }
 }
 
-cv::Mat PointDetector::DropOutliers(cv::Mat src) {
-    //TODO: Drop outliers
-    cv::Mat sd,mean,res,tmp;
-    double std,mn;
-    cv::meanStdDev(src,mean,sd,cv::Mat());
-    std = sd.at<double>(0,0);
-    mn = mean.at<double>(0,0);
-    debugMessage(std::to_string(std)+":"+std::to_string(mn));
-    return sd;
-}
-cv::Mat PointDetector::Draw25centBox(cv::Mat src){
-    cv::Point topLeft(src.size().width/4,src.size().height/4);
-    cv::Point botLeft(src.size().width/4,(src.size().height/4) *3);
-    cv::Point topRight((src.size().width/4)*3,src.size().height/4);
-    cv::Point botRight((src.size().width/4)*3,(src.size().height/4)*3);
-    cv::line(src,topLeft,topRight,cv::Scalar(255,255,255),1,8);
-    cv::line(src,botLeft,botRight,cv::Scalar(255,255,255),1,8);
-    cv::line(src,topLeft,botLeft,cv::Scalar(255,255,255),1,8);
-    cv::line(src,topRight,botRight,cv::Scalar(255,255,255),1,8);
-    Show(src);
-}
 

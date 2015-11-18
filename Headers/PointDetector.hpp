@@ -16,7 +16,6 @@ public:
     //TODO: Make non-public
     cv::Mat DetectPoints();
     cv::Mat DropOutliers(cv::Mat);
-    cv::Mat Draw25centBox(cv::Mat);
 
 private:
     cv::Mat mImage,mHlsImage,mBackProjectSampleHLS,mBinary,mDilated,mEroded,mBackProjectionSample,mThin;

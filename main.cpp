@@ -5,9 +5,8 @@
 #include "Headers/Images.hpp"
 #include "Headers/Utils.hpp"
 #include "Headers/PointDetector.hpp"
+#include "Headers/PageDetector.hpp"
 
-#define NUMBER_OF_PAGES 13
-#define NUMBER_OF_VIEWS 50
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
 
@@ -37,7 +36,8 @@ const std::vector<std::string> pageFiles =
         };
 const std::vector<std::string> backProjectFiles =
         {
-            "BackProjectSample.png"
+            "BackProjectSample.png",
+            "BackProjectSample2.png"
         };
 
 void LoadAllImages(){
@@ -46,6 +46,7 @@ void LoadAllImages(){
     backProjectSample = LoadImages(IMAGE_LOCATION,backProjectFiles);
     debugMessage("Loaded all images successfully");
 }
+
 /*
  * Back project
  * Threshold
@@ -56,14 +57,11 @@ void LoadAllImages(){
 int main() {
     LoadAllImages();
     //TODO: find reason for crash
-    for(int imageIndex = 0; imageIndex < NUMBER_OF_VIEWS;imageIndex++){
-        cv::Mat dots;
-        PointDetector pointDetector(viewImages[imageIndex],backProjectSample[0],15,std::to_string(imageIndex));
-        dots = pointDetector.DetectPoints();
-        pointDetector.Draw25centBox(dots);
-        pointDetector.~PointDetector();
-//        pointDetector.Show(dots);
-//        pointDetector.DropOutliers(dots);
+    PointDetector pd;
+    cv::Mat dots,dot;
+    for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
+        PageDetector pd(viewImages[imageIndex]);
+        pd.DetectPage(backProjectSample[1]);
     }
     return EXIT_SUCCESS;
 }
