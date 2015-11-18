@@ -30,7 +30,6 @@ Transformer::Transformer(cv::Mat src, std::vector <std::vector<cv::Point>> point
 std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots){
     cv::Mat whitePx;
     cv::findNonZero(dots,whitePx);
-//    ShowImage("Dots",dots);
     int highestX = 0, highestY =0,lowestX = std::numeric_limits<int>::max(),lowestY=std::numeric_limits<int>::max();
     std::vector<cv::Point> result(4);
     for (int i = 0; i < whitePx.total(); i++ ) {
@@ -52,15 +51,7 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots){
             lowestY = y;
             result[BOTTOM_MOST_POINT] = p;
         }
-//        std::cout << "Zero#" << i << ": " << whitePx.at<cv::Point>(i).x << ", " << whitePx.at<cv::Point>(i).y << std::endl;
     }
-
-//    for(size_t x = 0; x < whitePx.rows; x++){
-//        for(size_t y = 0; whitePx.cols;y++){
-//            int t = whitePx.at<int>(x,y);
-//            debugMessage("(" + std::to_string(x)+","+ std::to_string(x)+")="+ std::to_string(t));
-//        }
-//    }
     return result;
 }
 
@@ -70,6 +61,38 @@ cv::Mat Transformer::DrawCorners(cv::Mat src,std::vector<cv::Point> corners) {
     cv::circle(src,corners[RIGHT_MOST_POINT],5,cv::Scalar(0,0,255));
     cv::circle(src,corners[TOP_MOST_POINT],5,cv::Scalar(0,0,255));
     cv::circle(src,corners[BOTTOM_MOST_POINT],5,cv::Scalar(0,0,255));
+    cv::line(src,corners[LEFT_MOST_POINT],corners[BOTTOM_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(src,corners[BOTTOM_MOST_POINT],corners[RIGHT_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(src,corners[RIGHT_MOST_POINT],corners[TOP_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(src,corners[TOP_MOST_POINT],corners[LEFT_MOST_POINT],cv::Scalar(0,0,255));
     ShowImage("Dots",src);
     return result;
+}
+
+/*
+ * Given a set of white pixels that are believed to be blue
+ * Given an element
+ * Given a direction
+ * Find the closest point from set to element looking in direction
+ *  where direction is:
+ *      if element is left most
+ *          then above right
+ *      if element is right most
+ *          then bellow left
+ *      if element is top most
+ *          then bellow right
+ *      if element is bottom most
+ *          then above left
+ */
+cv::Point Transformer::FindClosestPoint(cv::Mat set, cv::Point element, int direction) {
+    if(direction==LEFT_MOST_POINT){
+
+    }else if(direction==RIGHT_MOST_POINT){
+
+    }else if(direction==TOP_MOST_POINT){
+
+    }else if(direction==BOTTOM_MOST_POINT){
+
+    }
+    return cv::Point_<int>();
 }

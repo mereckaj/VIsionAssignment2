@@ -15,7 +15,7 @@ public:
     std::vector<cv::Point> FindCorners(cv::Mat);
 
     cv::Mat DrawCorners(cv::Mat src,std::vector<cv::Point> corners);
-
+    cv::Point FindClosestPoint(cv::Mat set,cv::Point element,int direction);
 private:
     cv::Mat mImage;
     std::vector<std::vector<cv::Point>> mPoints;
