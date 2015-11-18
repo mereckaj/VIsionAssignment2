@@ -7,21 +7,39 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
+#include <opencv2/photo.hpp>
 #include "Headers/PointDetector.hpp"
 #include "Headers/Utils.hpp"
 #include "Histogram.cpp"
 
 PointDetector::~PointDetector() {
-    //TODO: implement
+    mImage.~Mat();
+    mHlsImage.~Mat();
+    mBackProjectSampleHLS.~Mat();
+    mBinary.~Mat();
+    mDilated.~Mat();
+    mEroded.~Mat();
+    mBackProjectionSample.~Mat();
 }
 PointDetector::PointDetector(){
-
+    mBinCount = 8;
 }
-PointDetector::PointDetector(cv::Mat srcImage) : PointDetector() {
+PointDetector::PointDetector(cv::Mat srcImage,cv::Mat backProjectionSample,int thresholdValue,std::string windowTitle) : PointDetector() {
     mImage = srcImage;
+    mBackProjectionSample = backProjectionSample;
+    mThresholdValue = thresholdValue;
+    mWindowTitle = windowTitle;
 }
 cv::Mat PointDetector::DetectPoints(){
-    //TODO: implement
+    cv::Mat backProjectSample,binary,thin,ed,d2,t2;
+    backProjectSample = BackProjectBluePixels(mBinCount);
+    binary = Threshold(backProjectSample);
+    ed = ErodeDilate(binary);
+    thin = Thinning(ed);
+    d2 = DilateErode(thin);
+    t2 = Thinning(d2);
+    return t2;
+
 }
 /**
  * Perform one thinning iteration.
@@ -78,15 +96,14 @@ cv::Mat PointDetector::Thinning(cv::Mat image) {
     }
     while (cv::countNonZero(diff) > 0);
     image *= 255;
+    mThin = image;
     return image;
 }
-cv::Mat PointDetector::BackProjectBluePixels(cv::Mat backProjectSample,int binCount){
-    cv::Mat backProjectSampleHLS;
-
+cv::Mat PointDetector::BackProjectBluePixels(int binCount){
     //Convert back projection sample to HLS
-    cvtColor(backProjectSample, backProjectSampleHLS, CV_BGR2HLS);
+    cvtColor(mBackProjectionSample, mBackProjectSampleHLS, CV_BGR2HLS);
     //Create a 3D historgram of back projection sample
-    ColourHistogram histogram3D(backProjectSampleHLS,binCount);
+    ColourHistogram histogram3D(mBackProjectSampleHLS,binCount);
     histogram3D.NormaliseHistogram();
 
     //Convert the image to HLS
@@ -99,13 +116,15 @@ cv::Mat PointDetector::BackProjectBluePixels(cv::Mat backProjectSample,int binCo
     //Return the probability matrix
     return backProjectionProbabilities;
 }
-cv::Mat PointDetector::ThresholdDilateErode(int thresholdValue){
-
+cv::Mat PointDetector::Threshold(cv::Mat probMatrix){
     //Threshold the image
-    cv::threshold(mImage,mBinary,thresholdValue,256,CV_THRESH_BINARY);
+    cv::threshold(probMatrix,mBinary,mThresholdValue,256,CV_THRESH_BINARY);
+    return mBinary;
+}
+cv::Mat PointDetector::ErodeDilate(cv::Mat src){
 
     //Erode the image
-    cv::erode(mBinary,mEroded,cv::Mat());
+    cv::erode(src,mEroded,cv::Mat());
 
     //Dilate the image
     cv::dilate(mEroded, mDilated,cv::Mat());
@@ -113,12 +132,47 @@ cv::Mat PointDetector::ThresholdDilateErode(int thresholdValue){
     //Return the dilated image matrix
     return mDilated;
 }
+cv::Mat PointDetector::DilateErode(cv::Mat src){
+
+
+    //Dilate the image
+    cv::dilate(src, mDilated,cv::Mat());
+
+    //Erode the image
+    cv::erode(mDilated,mEroded,cv::Mat());
+
+    //Return the dilated image matrix
+    return mEroded;
+}
 void PointDetector::Show(cv::Mat img){
     if(img.empty()){
         std::cerr << "Attempted to show an empty image" << std::endl;
     }else {
         cv::imshow(mWindowTitle, img);
-        cv::moveWindow(mWindowTitle, 0, 0);
+        cv::moveWindow(mWindowTitle,0 , 0);
         cv::waitKey(0);
     }
 }
+
+cv::Mat PointDetector::DropOutliers(cv::Mat src) {
+    //TODO: Drop outliers
+    cv::Mat sd,mean,res,tmp;
+    double std,mn;
+    cv::meanStdDev(src,mean,sd,cv::Mat());
+    std = sd.at<double>(0,0);
+    mn = mean.at<double>(0,0);
+    debugMessage(std::to_string(std)+":"+std::to_string(mn));
+    return sd;
+}
+cv::Mat PointDetector::Draw25centBox(cv::Mat src){
+    cv::Point topLeft(src.size().width/4,src.size().height/4);
+    cv::Point botLeft(src.size().width/4,(src.size().height/4) *3);
+    cv::Point topRight((src.size().width/4)*3,src.size().height/4);
+    cv::Point botRight((src.size().width/4)*3,(src.size().height/4)*3);
+    cv::line(src,topLeft,topRight,cv::Scalar(255,255,255),1,8);
+    cv::line(src,botLeft,botRight,cv::Scalar(255,255,255),1,8);
+    cv::line(src,topLeft,botLeft,cv::Scalar(255,255,255),1,8);
+    cv::line(src,topRight,botRight,cv::Scalar(255,255,255),1,8);
+    Show(src);
+}
+

@@ -54,13 +54,16 @@ void LoadAllImages(){
  *
  */
 int main() {
-    cv::Mat dots;
     LoadAllImages();
-    for(int imageIndex = 0; imageIndex < 1;imageIndex++){
-        PointDetector pointDetector;
-//        pointDetector = new PointDetector(viewImages[imageIndex],backProjectSample[0],"Test");
-//        pointDetector->DetectPoints();
-//        pointDetector->Show(pointDetector->mThin);
+    //TODO: find reason for crash
+    for(int imageIndex = 0; imageIndex < NUMBER_OF_VIEWS;imageIndex++){
+        cv::Mat dots;
+        PointDetector pointDetector(viewImages[imageIndex],backProjectSample[0],15,std::to_string(imageIndex));
+        dots = pointDetector.DetectPoints();
+        pointDetector.Draw25centBox(dots);
+        pointDetector.~PointDetector();
+//        pointDetector.Show(dots);
+//        pointDetector.DropOutliers(dots);
     }
     return EXIT_SUCCESS;
 }
