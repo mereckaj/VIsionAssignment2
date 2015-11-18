@@ -6,6 +6,7 @@
 #include "Headers/Utils.hpp"
 #include "Headers/PointDetector.hpp"
 #include "Headers/PageDetector.hpp"
+#include "Headers/Transformer.hpp"
 
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
@@ -56,18 +57,19 @@ void LoadAllImages(){
  */
 int main() {
     LoadAllImages();
-    //TODO: find reason for crash
-    PointDetector pd;
-    cv::Mat page,masked
-    ;
+    cv::Mat detectedPage,maskedImage, drawing,dots,drawingWithCorners;
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Point> corners;
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
-        PageDetector pad(viewImages[imageIndex]);
-        page = pad.DetectPage(backProjectSample[0]);
-        masked = pad.ApplyMask(page);
-//        pad.Show(masked);
-        PointDetector pd(masked,backProjectSample[0],15,std::to_string(imageIndex));
-        pd.DetectPoints();
-
+        PageDetector pageDetector(viewImages[imageIndex]);
+        detectedPage = pageDetector.DetectPage();
+        maskedImage = pageDetector.ApplyMask(viewImages[imageIndex],detectedPage);
+        PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
+        dots = pointDetector.DetectPoints(backProjectSample[0]);
+//        drawing = pointDetector.DrawContours(contours,viewImages[imageIndex]);
+        Transformer transformer(maskedImage,contours);
+        corners = transformer.FindCorners(dots);
+        drawingWithCorners = transformer.DrawCorners(viewImages[imageIndex],corners);
     }
     return EXIT_SUCCESS;
 }

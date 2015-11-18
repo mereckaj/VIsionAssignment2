@@ -12,47 +12,47 @@
 #include "Headers/Utils.hpp"
 #include "Histogram.cpp"
 
+int slider_max = 255;
+int slider;
+int value;
+cv::Mat val;
+
 cv::RNG rng(12345);
 PointDetector::~PointDetector() {
-    mImage.~Mat();
-    mHlsImage.~Mat();
-    mBackProjectSampleHLS.~Mat();
-    mBinary.~Mat();
-    mDilated.~Mat();
-    mEroded.~Mat();
-    mBackProjectionSample.~Mat();
+    mImage.deallocate();
 }
 PointDetector::PointDetector(){
     mBinCount = 8;
 }
-PointDetector::PointDetector(cv::Mat srcImage,cv::Mat backProjectionSample,int thresholdValue,std::string windowTitle) : PointDetector() {
-    debugMessage("Construct");
+PointDetector::PointDetector(cv::Mat srcImage,int thresholdValue,std::string windowTitle) : PointDetector() {
     mImage = srcImage;
-    mBackProjectionSample = backProjectionSample;
     mThresholdValue = thresholdValue;
     mWindowTitle = windowTitle;
 }
-std::vector<std::vector<cv::Point>> PointDetector::DetectPoints(){
+//std::vector<std::vector<cv::Point>> PointDetector::DetectPoints(cv::Mat backProjectSample){
+
+cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
     debugMessage("Detect start");
-    cv::Mat backProjectSample,binary,thin,ed,d2,t2,lines,liness;
-    backProjectSample = BackProjectBluePixels(mBinCount);
-    binary = Threshold(backProjectSample);
+    cv::Mat backProjectProb,binary,thin,ed,d2,t2,lines,liness;
+    backProjectProb= BackProjectBluePixels(backProjectSample,mBinCount);
+    binary = Threshold(backProjectProb);
     ed = ErodeDilate(binary);
     thin = Thinning(ed);
     d2 = DilateErode(thin);
     t2 = Thinning(d2);
-
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::findContours(t2,contours,hierarchy,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-    cv::Mat drawing = cv::Mat::zeros( t2.size(), CV_8UC3 );
-    for( int i = 0; i< contours.size(); i++ )
+    return t2;
+//    std::vector<std::vector<cv::Point>> contours;
+//    cv::findContours(t2,contours,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+//    return contours;
+}
+cv::Mat PointDetector::DrawContours(std::vector<std::vector<cv::Point>> contours,cv::Mat src){
+    cv::Mat drawing = cv::Mat::zeros( src.size(), CV_8UC3 );
+    for( size_t  i = 0; i< contours.size(); i++ )
     {
         cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+        drawContours( drawing, contours, i, color, 2, 8, 0, 0, cv::Point() );
     }
-    Show(drawing);
-    return contours;
+    return drawing;
 }
 /**
  * Perform one thinning iteration.
@@ -109,12 +109,13 @@ cv::Mat PointDetector::Thinning(cv::Mat image) {
     }
     while (cv::countNonZero(diff) > 0);
     image *= 255;
-    mThin = image;
     return image;
 }
-cv::Mat PointDetector::BackProjectBluePixels(int binCount){
+cv::Mat PointDetector::BackProjectBluePixels(cv::Mat backProjectionSample,int binCount){
+    cv::Mat mBackProjectSampleHLS,mHlsImage;
+
     //Convert back projection sample to HLS
-    cvtColor(mBackProjectionSample, mBackProjectSampleHLS, CV_BGR2HLS);
+    cv::cvtColor(backProjectionSample, mBackProjectSampleHLS, CV_BGR2HLS);
     //Create a 3D historgram of back projection sample
     ColourHistogram histogram3D(mBackProjectSampleHLS,binCount);
     histogram3D.NormaliseHistogram();
@@ -130,11 +131,13 @@ cv::Mat PointDetector::BackProjectBluePixels(int binCount){
     return backProjectionProbabilities;
 }
 cv::Mat PointDetector::Threshold(cv::Mat probMatrix){
-    //Threshold the image
+    cv::Mat mBinary;
+    //Threshold the image;
     cv::threshold(probMatrix,mBinary,mThresholdValue,256,CV_THRESH_BINARY);
     return mBinary;
 }
 cv::Mat PointDetector::ErodeDilate(cv::Mat src){
+    cv::Mat mEroded,mDilated;
 
     //Erode the image
     cv::erode(src,mEroded,cv::Mat());
@@ -146,7 +149,7 @@ cv::Mat PointDetector::ErodeDilate(cv::Mat src){
     return mDilated;
 }
 cv::Mat PointDetector::DilateErode(cv::Mat src){
-
+    cv::Mat mEroded,mDilated;
 
     //Dilate the image
     cv::dilate(src, mDilated,cv::Mat());
@@ -156,13 +159,4 @@ cv::Mat PointDetector::DilateErode(cv::Mat src){
 
     //Return the dilated image matrix
     return mEroded;
-}
-void PointDetector::Show(cv::Mat img){
-    if(img.empty()){
-        std::cerr << "Attempted to show an empty image" << std::endl;
-    }else {
-        cv::imshow(mWindowTitle, img);
-        cv::moveWindow(mWindowTitle,0 , 0);
-        cv::waitKey(0);
-    }
 }

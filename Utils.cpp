@@ -5,6 +5,8 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core.hpp>
 #include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include "Headers/Utils.hpp"
 cv::Mat StretchImage( cv::Mat& image )
 {
@@ -50,7 +52,19 @@ cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing)
     image2.copyTo(imageROI);
     return result;
 }
-
+void ShowImage(std::string title,cv::Mat src){
+    cv::imshow(title,src);
+    cv::moveWindow(title,50,10);
+    cv::waitKey(0);
+}
+void ShowImage(std::string title,cv::Mat src,cv::Mat src2){
+    ShowImage(title,JoinImagesHorizontally(src,src2,5));
+}
+void ShowImage(std::string title,cv::Mat src,cv::Mat src2,cv::Size scale){
+    cv::Mat joinedScaled,joined = JoinImagesHorizontally(src,src2,5);
+    cv::resize(joined,joinedScaled,scale,0,0,CV_INTER_NN);
+    ShowImage(title,joinedScaled);
+}
 void debugMessage(std::string s){
     std::cout << s << std::endl;
 }

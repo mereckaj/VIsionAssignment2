@@ -9,21 +9,20 @@
 class PointDetector{
 public:
     PointDetector();
-    PointDetector(cv::Mat,cv::Mat,int,std::string);
+    PointDetector(cv::Mat srcImage,int thresholdValue,std::string windowTitle);
     ~PointDetector();
-    void Show(cv::Mat img);
-    std::vector<std::vector<cv::Point>> DetectPoints();
-
+    cv::Mat DetectPoints(cv::Mat backProjectSample);
+    cv::Mat DrawContours(std::vector<std::vector<cv::Point>> contours, cv::Mat src);
+    cv::Mat Threshold(cv::Mat);
+    cv::Mat BackProjectBluePixels(cv::Mat backProjectionSample, int binCount);
 private:
-    cv::Mat mImage,mHlsImage,mBackProjectSampleHLS,mBinary,mDilated,mEroded,mBackProjectionSample,mThin;
-    int mThresholdValue,mBinCount;
+    cv::Mat mImage;
+    int mBinCount,mThresholdValue;
     std::string mWindowTitle;
     cv::Mat ThinningIterator(cv::Mat,int);
     cv::Mat ErodeDilate(cv::Mat);
     cv::Mat DilateErode(cv::Mat);
     cv::Mat Thinning(cv::Mat);
-    cv::Mat BackProjectBluePixels(int);
-    cv::Mat Threshold(cv::Mat);
 
 };
 
