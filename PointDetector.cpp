@@ -22,7 +22,7 @@ PointDetector::~PointDetector() {
     mImage.deallocate();
 }
 PointDetector::PointDetector(){
-    mBinCount = 8;
+    mBinCount = 4;
 }
 PointDetector::PointDetector(cv::Mat srcImage,int thresholdValue,std::string windowTitle) : PointDetector() {
     mImage = srcImage;
@@ -32,7 +32,6 @@ PointDetector::PointDetector(cv::Mat srcImage,int thresholdValue,std::string win
 //std::vector<std::vector<cv::Point>> PointDetector::DetectPoints(cv::Mat backProjectSample){
 
 cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
-    debugMessage("Detect start");
     cv::Mat backProjectProb,binary,thin,ed,d2,t2,lines,liness;
     backProjectProb= BackProjectBluePixels(backProjectSample,mBinCount);
     binary = Threshold(backProjectProb);
@@ -41,16 +40,18 @@ cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
     d2 = DilateErode(thin);
     t2 = Thinning(d2);
     return t2;
-//    std::vector<std::vector<cv::Point>> contours;
-//    cv::findContours(t2,contours,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-//    return contours;
+}
+std::vector<std::vector<cv::Point>> PointDetector::DotsToPoints(cv::Mat src){
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(src,contours,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+    return contours;
 }
 cv::Mat PointDetector::DrawContours(std::vector<std::vector<cv::Point>> contours,cv::Mat src){
     cv::Mat drawing = cv::Mat::zeros( src.size(), CV_8UC3 );
     for( size_t  i = 0; i< contours.size(); i++ )
     {
         cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        drawContours( drawing, contours, i, color, 2, 8, 0, 0, cv::Point() );
+        cv::drawContours( drawing, contours, i, color, 2, 8, 0, 0, cv::Point() );
     }
     return drawing;
 }

@@ -19,11 +19,18 @@ Transformer::~Transformer() {
 
 }
 
-Transformer::Transformer(cv::Mat src, std::vector <std::vector<cv::Point>> points) : Transformer() {
+Transformer::Transformer(cv::Mat src) : Transformer() {
     mImage = src;
-    mPoints = points;
 }
-
+std::vector<cv::Point> Transformer::WhiteToPoints(cv::Mat src){
+    cv::Mat whitePx;
+    cv::findNonZero(src,whitePx);
+    std::vector<cv::Point> result(whitePx.total());
+    for(size_t i = 0; i < whitePx.total();i++){
+        result[i] = whitePx.at<cv::Point>(i);
+    }
+    return result;
+}
 /*
  * Return 4 points: right most, left most, top most and bottom most (In that order)
  */
@@ -32,7 +39,7 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots){
     cv::findNonZero(dots,whitePx);
     int highestX = 0, highestY =0,lowestX = std::numeric_limits<int>::max(),lowestY=std::numeric_limits<int>::max();
     std::vector<cv::Point> result(4);
-    for (int i = 0; i < whitePx.total(); i++ ) {
+    for (size_t i = 0; i < whitePx.total(); i++ ) {
         cv::Point p = whitePx.at<cv::Point>(i);
         int x = p.x,y=p.y;
         if(x>highestX){
@@ -57,15 +64,15 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots){
 
 cv::Mat Transformer::DrawCorners(cv::Mat src,std::vector<cv::Point> corners) {
     cv::Mat result;
-    cv::circle(src,corners[LEFT_MOST_POINT],5,cv::Scalar(0,0,255));
-    cv::circle(src,corners[RIGHT_MOST_POINT],5,cv::Scalar(0,0,255));
-    cv::circle(src,corners[TOP_MOST_POINT],5,cv::Scalar(0,0,255));
-    cv::circle(src,corners[BOTTOM_MOST_POINT],5,cv::Scalar(0,0,255));
-    cv::line(src,corners[LEFT_MOST_POINT],corners[BOTTOM_MOST_POINT],cv::Scalar(0,0,255));
-    cv::line(src,corners[BOTTOM_MOST_POINT],corners[RIGHT_MOST_POINT],cv::Scalar(0,0,255));
-    cv::line(src,corners[RIGHT_MOST_POINT],corners[TOP_MOST_POINT],cv::Scalar(0,0,255));
-    cv::line(src,corners[TOP_MOST_POINT],corners[LEFT_MOST_POINT],cv::Scalar(0,0,255));
-    ShowImage("Dots",src);
+    src.copyTo(result);
+    cv::circle(result,corners[LEFT_MOST_POINT],5,cv::Scalar(0,0,255));
+    cv::circle(result,corners[RIGHT_MOST_POINT],5,cv::Scalar(0,0,255));
+    cv::circle(result,corners[TOP_MOST_POINT],5,cv::Scalar(0,0,255));
+    cv::circle(result,corners[BOTTOM_MOST_POINT],5,cv::Scalar(0,0,255));
+    cv::line(result,corners[LEFT_MOST_POINT],corners[BOTTOM_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(result,corners[BOTTOM_MOST_POINT],corners[RIGHT_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(result,corners[RIGHT_MOST_POINT],corners[TOP_MOST_POINT],cv::Scalar(0,0,255));
+    cv::line(result,corners[TOP_MOST_POINT],corners[LEFT_MOST_POINT],cv::Scalar(0,0,255));
     return result;
 }
 
@@ -95,4 +102,11 @@ cv::Point Transformer::FindClosestPoint(cv::Mat set, cv::Point element, int dire
 
     }
     return cv::Point_<int>();
+}
+
+cv::Mat Transformer::Draw(cv::Mat src,std::vector<cv::Point> points) {
+    for(size_t i = 0; i < points.size();i++){
+        cv::circle(src,points.at(i),5,cv::Scalar(0,0,255),-1);
+    }
+    return src;
 }

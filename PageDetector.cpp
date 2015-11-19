@@ -18,11 +18,15 @@ PageDetector::~PageDetector() {
     mImage.deallocate();
 }
 cv::Mat PageDetector::DetectPage(){
-    cv::Mat colors[mImage.channels()],dme;
+    cv::Mat flood,colors[mImage.channels()],dme;
     cv::split(mImage,colors);
     cv::threshold(colors[0],dme,0,255,CV_THRESH_BINARY|CV_THRESH_OTSU);
     cv::erode(dme,dme,cv::Mat());
     cv::dilate(dme,dme,cv::Mat());
+    /*
+     * TODO: Connected components and FloodFill to make sure full page is found
+     */
+//    cv::floodFill(dme,cv::Point(1,1),cv::Scalar(0));
     return dme;
 }
 
@@ -31,7 +35,6 @@ cv::Mat PageDetector::ApplyMask(cv::Mat src, cv::Mat mask) {
     std::vector<cv::Mat> channels(src.channels());
     cv::Mat *masked = new cv::Mat[src.channels()];
     cv::split(src,channels);
-    debugMessage("Split");
     for(size_t i = 0; i < channels.size();i++){
         channels[i].copyTo(masked[i],mask);
     }

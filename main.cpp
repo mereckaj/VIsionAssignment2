@@ -7,6 +7,7 @@
 #include "Headers/PointDetector.hpp"
 #include "Headers/PageDetector.hpp"
 #include "Headers/Transformer.hpp"
+#include "Headers/LineDetector.hpp"
 
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
@@ -20,13 +21,13 @@ const std::vector<std::string> viewFiles =
             "BookView14.JPG","BookView15.JPG","BookView16.JPG","BookView17.JPG",
             "BookView01.JPG","BookView18.JPG","BookView19.JPG","BookView20.JPG",
             "BookView21.JPG","BookView22.JPG","BookView23.JPG","BookView24.JPG",
-            "BookView25.JPG","BookView26.JPG","BookView27.JPG","BookView28.JPG",
-            "BookView29.JPG","BookView30.JPG","BookView31.JPG","BookView32.JPG",
-            "BookView33.JPG","BookView34.JPG","BookView35.JPG","BookView36.JPG",
-            "BookView37.JPG","BookView38.JPG","BookView39.JPG","BookView40.JPG",
-            "BookView41.JPG","BookView42.JPG","BookView43.JPG","BookView44.JPG",
-            "BookView45.JPG","BookView46.JPG","BookView47.JPG","BookView48.JPG",
-            "BookView49.JPG","BookView50.JPG"
+//            "BookView25.JPG","BookView26.JPG","BookView27.JPG","BookView28.JPG",
+//            "BookView29.JPG","BookView30.JPG","BookView31.JPG","BookView32.JPG",
+//            "BookView33.JPG","BookView34.JPG","BookView35.JPG","BookView36.JPG",
+//            "BookView37.JPG","BookView38.JPG","BookView39.JPG","BookView40.JPG",
+//            "BookView41.JPG","BookView42.JPG","BookView43.JPG","BookView44.JPG",
+//            "BookView45.JPG","BookView46.JPG","BookView47.JPG","BookView48.JPG",
+//            "BookView49.JPG","BookView50.JPG"
         };
 const std::vector<std::string> pageFiles =
         {
@@ -57,19 +58,33 @@ void LoadAllImages(){
  */
 int main() {
     LoadAllImages();
-    cv::Mat detectedPage,maskedImage, drawing,dots,drawingWithCorners;
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Point> corners;
+    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners;
+    std::vector<cv::Point> points;
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
+        /*
+         * Detect the white page and apply it as a mask to the original image.
+         */
         PageDetector pageDetector(viewImages[imageIndex]);
         detectedPage = pageDetector.DetectPage();
         maskedImage = pageDetector.ApplyMask(viewImages[imageIndex],detectedPage);
+
+        /*
+         * Search for blue dots in the masked image
+         */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
-//        drawing = pointDetector.DrawContours(contours,viewImages[imageIndex]);
-        Transformer transformer(maskedImage,contours);
-        corners = transformer.FindCorners(dots);
-        drawingWithCorners = transformer.DrawCorners(viewImages[imageIndex],corners);
+
+        /*
+         * Transform the image
+         */
+        Transformer transformer(maskedImage);
+        points = transformer.WhiteToPoints(dots);
+        drawingWithCorners = transformer.Draw(maskedImage,points);
+        ShowImage("Drawn",drawingWithCorners);
+//        corners = transformer.FindCorners(dots);
+//        drawingWithCorners = transformer.DrawCorners(viewImages[imageIndex],corners);
+
+
     }
     return EXIT_SUCCESS;
 }
