@@ -63,7 +63,7 @@ void LoadAllImages(){
  */
 int main() {
     LoadAllImages();
-    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners;
+    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners,transformedImage;
     std::vector<cv::Point> corners,closest;
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
         /*
@@ -88,7 +88,10 @@ int main() {
          * Draw the corners that were found
          */
         drawingWithCorners = transformer.Draw(viewImages[imageIndex],corners);
-//        ShowImage("Corners",drawingWithCorners);
+        transformedImage = transformer.Transform(viewImages[imageIndex],corners);
+        transformedImage = JoinImagesHorizontally(pageImages[0],transformedImage,10);
+        ShowImage("Corners",transformedImage);
+
     }
     return EXIT_SUCCESS;
 }

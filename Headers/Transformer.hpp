@@ -16,6 +16,8 @@ public:
     std::vector<cv::Point> WhiteToPoints(cv::Mat src);
     cv::Mat Draw(cv::Mat src,std::vector<cv::Point> vector);
 
+    cv::Mat Transform(cv::Mat src, std::vector<cv::Point> corners);
+
 private:
     cv::Mat mImage;
     std::vector<std::vector<cv::Point>> mPoints;
