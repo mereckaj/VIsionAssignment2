@@ -12,7 +12,6 @@ public:
     PointDetector(cv::Mat srcImage,int thresholdValue,std::string windowTitle);
     ~PointDetector();
     cv::Mat DetectPoints(cv::Mat backProjectSample);
-    cv::Mat DrawContours(std::vector<std::vector<cv::Point>> contours, cv::Mat src);
     cv::Mat Threshold(cv::Mat);
     cv::Mat BackProjectBluePixels(cv::Mat backProjectionSample, int binCount);
     std::vector<std::vector<cv::Point>> DotsToPoints(cv::Mat src);

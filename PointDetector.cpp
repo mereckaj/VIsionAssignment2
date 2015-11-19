@@ -11,13 +11,6 @@
 #include "Headers/PointDetector.hpp"
 #include "Headers/Utils.hpp"
 #include "Histogram.cpp"
-
-int slider_max = 255;
-int slider;
-int value;
-cv::Mat val;
-
-cv::RNG rng(12345);
 PointDetector::~PointDetector() {
     mImage.deallocate();
 }
@@ -45,15 +38,6 @@ std::vector<std::vector<cv::Point>> PointDetector::DotsToPoints(cv::Mat src){
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(src,contours,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
     return contours;
-}
-cv::Mat PointDetector::DrawContours(std::vector<std::vector<cv::Point>> contours,cv::Mat src){
-    cv::Mat drawing = cv::Mat::zeros( src.size(), CV_8UC3 );
-    for( size_t  i = 0; i< contours.size(); i++ )
-    {
-        cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        cv::drawContours( drawing, contours, i, color, 2, 8, 0, 0, cv::Point() );
-    }
-    return drawing;
 }
 /**
  * Perform one thinning iteration.

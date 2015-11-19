@@ -10,6 +10,11 @@
 #include "Headers/LineDetector.hpp"
 
 
+#define RIGHT_MOST_POINT 0
+#define LEFT_MOST_POINT 1
+#define TOP_MOST_POINT 2
+#define BOTTOM_MOST_POINT 3
+
 cv::Mat *pageImages,*viewImages,*backProjectSample;
 
 const std::string IMAGE_LOCATION = "/home/mereckaj/Dev/ClionProjects/VisionAssignment2/Images/";
@@ -59,7 +64,7 @@ void LoadAllImages(){
 int main() {
     LoadAllImages();
     cv::Mat detectedPage,maskedImage,dots,drawingWithCorners;
-    std::vector<cv::Point> points;
+    std::vector<cv::Point> corners,closest;
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
         /*
          * Detect the white page and apply it as a mask to the original image.
@@ -73,18 +78,17 @@ int main() {
          */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
-
         /*
          * Transform the image
          */
         Transformer transformer(maskedImage);
-        points = transformer.WhiteToPoints(dots);
-        drawingWithCorners = transformer.Draw(maskedImage,points);
-        ShowImage("Drawn",drawingWithCorners);
-//        corners = transformer.FindCorners(dots);
-//        drawingWithCorners = transformer.DrawCorners(viewImages[imageIndex],corners);
+        corners = transformer.FindCorners(dots);
 
-
+        /*
+         * Draw the corners that were found
+         */
+        drawingWithCorners = transformer.Draw(viewImages[imageIndex],corners);
+//        ShowImage("Corners",drawingWithCorners);
     }
     return EXIT_SUCCESS;
 }

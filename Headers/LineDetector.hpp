@@ -15,7 +15,7 @@ public:
     cv::Mat HoughLines();
     cv::Mat DrawLines(cv::Mat dest, std::vector<cv::Vec2f> lines);
     cv::Mat LineFit(std::vector<cv::Point> dots,cv::Mat mImage);
-    std::vector<cv::Point> FindClosePoints(cv::Mat dots, int direction, cv::Point);
+    std::vector<cv::Point> FindClosePoints(cv::Mat dots, int direction, std::vector<cv::Point> corners);
 private:
     cv::Mat mImage;
 };
