@@ -26,7 +26,7 @@ std::vector<cv::Point> Transformer::WhiteToPoints(cv::Mat src){
     cv::Mat whitePx;
     cv::findNonZero(src,whitePx);
     std::vector<cv::Point> result(whitePx.total());
-    for(size_t i = 0; i < whitePx.total();i++){
+    for(int i = 0; i < whitePx.total();i++){
         result[i] = whitePx.at<cv::Point>(i);
     }
     return result;
@@ -40,7 +40,7 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots){
     int highestX = 0, highestY =0,lowestX = std::numeric_limits<int>::max(),lowestY=std::numeric_limits<int>::max();
     std::vector<cv::Point> result(4);
     for (size_t i = 0; i < whitePx.total(); i++ ) {
-        cv::Point p = whitePx.at<cv::Point>(i);
+        cv::Point p = whitePx.at<cv::Point>((int) i);
         int x = p.x,y=p.y;
         if(x>highestX){
             highestX = x;

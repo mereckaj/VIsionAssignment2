@@ -61,7 +61,7 @@ std::vector<cv::Point> LineDetector::FindClosePoints(cv::Mat dots,int direction,
     switch(direction){
         case RIGHT_MOST_POINT:
             referencePoint = corners[RIGHT_MOST_POINT];
-            for(size_t i = 0 ; i < whitePx.total();i++) {
+            for(int i = 0 ; i < whitePx.total();i++) {
                 // Look for points above and to the left
                 currentPoint = whitePx.at<cv::Point>(i);
                 if(currentPoint != referencePoint) {
@@ -73,9 +73,9 @@ std::vector<cv::Point> LineDetector::FindClosePoints(cv::Mat dots,int direction,
             }
             break;
         case LEFT_MOST_POINT:
-            for(size_t i = 0 ; i < whitePx.total();i++) {
+            for(int i = 0 ; i < whitePx.total();i++) {
                 // Look for points above and to the left
-                currentPoint = whitePx.at<cv::Point>(i);
+                currentPoint = whitePx.at<cv::Point>((int) i);
                 if(currentPoint != referencePoint) {
                     if (currentPoint.x > referencePoint.x && currentPoint.y > referencePoint.y
                         && currentPoint.x < corners[BOTTOM_MOST_POINT].x) {
@@ -85,9 +85,9 @@ std::vector<cv::Point> LineDetector::FindClosePoints(cv::Mat dots,int direction,
             }
             break;
         case TOP_MOST_POINT:
-            for(size_t i = 0 ; i < whitePx.total();i++) {
+            for(int i = 0 ; i < whitePx.total();i++) {
                 // Look for points above and to the left
-                currentPoint = whitePx.at<cv::Point>(i);
+                currentPoint = whitePx.at<cv::Point>((int) i);
                 if(currentPoint != referencePoint) {
                     if (currentPoint.x < referencePoint.x && currentPoint.y > referencePoint.y
                         && currentPoint.y < corners[LEFT_MOST_POINT].y) {
@@ -97,9 +97,9 @@ std::vector<cv::Point> LineDetector::FindClosePoints(cv::Mat dots,int direction,
             }
             break;
         case BOTTOM_MOST_POINT:
-            for(size_t i = 0 ; i < whitePx.total();i++) {
+            for(int i = 0 ; i < whitePx.total();i++) {
                 // Look for points above and to the left
-                currentPoint = whitePx.at<cv::Point>(i);
+                currentPoint = whitePx.at<cv::Point>((int) i);
                 if(currentPoint != referencePoint) {
                     if (currentPoint.x > referencePoint.x && currentPoint.y < referencePoint.y
                         && currentPoint.y < corners[RIGHT_MOST_POINT].y) {
@@ -119,14 +119,13 @@ cv::Mat LineDetector::LineFit(std::vector<cv::Point> dots,cv::Mat mImage){
     cv::findNonZero(dots, whitePx);
     std::vector<cv::Point> whitePoints;
     for(size_t i = 0; i < whitePx.total();i++){
-        whitePoints.push_back(whitePx.at<cv::Point>(i));
+        whitePoints.push_back(whitePx.at<cv::Point>((int) i));
     }
-    debugMessage("1");
     cv::fitLine(whitePoints,output,CV_DIST_L1,2,0.01,0.01);
     cv::Vec4f t = output.at<cv::Vec4f>(0);
-    cv::line(mImage,cv::Point(t[2],t[3]),cv::Point(t[2]+t[0]*1000,t[3]+t[1]*1000),cv::Scalar(0,0,255));
-    cv::line(mImage,cv::Point(t[2],t[3]),cv::Point(t[2]+t[0]*-1000,t[3]+t[1]*-1000),cv::Scalar(0,0,255));
-    cv::circle(mImage,cv::Point(t[2],t[3]),4,cv::Scalar(0,0,255));
+    cv::line(mImage,cv::Point((int) t[2], (int) t[3]),cv::Point((int) (t[2]+t[0]*1000), (int) (t[3]+t[1]*1000)),cv::Scalar(0,0,255));
+    cv::line(mImage,cv::Point((int) t[2], (int) t[3]),cv::Point((int) (t[2]+t[0]*-1000), (int) (t[3]+t[1]*-1000)),cv::Scalar(0,0,255));
+    cv::circle(mImage,cv::Point((int) t[2], (int) t[3]),4,cv::Scalar(0,0,255));
     ShowImage("",mImage);
     return output;
 }

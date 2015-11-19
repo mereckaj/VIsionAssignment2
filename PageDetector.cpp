@@ -32,12 +32,12 @@ cv::Mat PageDetector::DetectPage(){
 
 cv::Mat PageDetector::ApplyMask(cv::Mat src, cv::Mat mask) {
     cv::Mat result;
-    std::vector<cv::Mat> channels(src.channels());
+    std::vector<cv::Mat> channels((unsigned long) src.channels());
     cv::Mat *masked = new cv::Mat[src.channels()];
     cv::split(src,channels);
     for(size_t i = 0; i < channels.size();i++){
         channels[i].copyTo(masked[i],mask);
     }
-    cv::merge(masked,src.channels(),result);
+    cv::merge(masked, (size_t) src.channels(),result);
     return result;
 }

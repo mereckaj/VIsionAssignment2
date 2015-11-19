@@ -28,8 +28,8 @@ cv::Mat StretchImage( cv::Mat& image )
     // Stretch values using a lookup-table
     int entries(256);
     cv::Mat lut(1,entries,CV_8U);
-    for (size_t i=0; (i<256); i++)
-        lut.at<uchar>(i) = (255*i)/max;
+    for (int i=0; (i<256); i++)
+        lut.at<uchar>(i) = (uchar) ((255*i)/max);
     cv::LUT(image,lut,result);
 
     return result;

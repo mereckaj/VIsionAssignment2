@@ -10,7 +10,7 @@ class Histogram
 {
 protected:
     cv::Mat mImage;
-    uint8_t mNumberChannels;
+    int mNumberChannels;
     int* mChannelNumbers;
     int* mNumberBins;
     float mChannelRange[2];
