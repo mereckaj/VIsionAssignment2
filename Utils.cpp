@@ -56,6 +56,7 @@ void ShowImage(std::string title,cv::Mat src){
     cv::imshow(title,src);
     cv::moveWindow(title,50,10);
     cv::waitKey(0);
+    cv::destroyWindow(title);
 }
 void ShowImage(std::string title,cv::Mat src,cv::Mat src2){
     ShowImage(title,JoinImagesHorizontally(src,src2,5));

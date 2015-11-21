@@ -15,8 +15,10 @@ public:
     std::vector<cv::Point> FindCorners(cv::Mat);
     std::vector<cv::Point> WhiteToPoints(cv::Mat src);
     cv::Mat Draw(cv::Mat src,std::vector<cv::Point> vector);
+    cv::Mat Transform(cv::Mat src, std::vector<cv::Point> corners, std::vector<cv::Point> transformationRefPoints);
+    cv::Mat UnsharpMask(cv::Mat im);
 
-    cv::Mat Transform(cv::Mat src, std::vector<cv::Point> corners);
+    std::vector<cv::Point> FindTemplateCorners(cv::Mat mat);
 
 private:
     cv::Mat mImage;

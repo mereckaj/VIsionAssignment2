@@ -43,8 +43,8 @@ const std::vector<std::string> pageFiles =
         };
 const std::vector<std::string> backProjectFiles =
         {
-            "BackProjectSample.png",
-            "BackProjectSample2.png"
+            "BackProjectSample.png",// Blue pixels
+            "BackProjectSample2.png"// White page pixels
         };
 
 void LoadAllImages(){
@@ -53,7 +53,22 @@ void LoadAllImages(){
     backProjectSample = LoadImages(IMAGE_LOCATION,backProjectFiles);
     debugMessage("Loaded all images successfully");
 }
-
+/*
+ * return points in the order:
+ *      top left
+ *      bottom left
+ *      bottom right
+ *      top right
+ */
+std::vector<cv::Point> FindTemplateCorners(cv::Mat templ){
+    cv::Mat points,cornerDrawing;
+    std::vector<cv::Point> corners;
+    PointDetector pointDetector(templ,15,"Template");
+    points = pointDetector.DetectPoints(backProjectSample[0]);
+    Transformer transformer(points);
+    corners = transformer.FindTemplateCorners(points);
+    return corners;
+}
 /*
  * Back project
  * Threshold
@@ -62,9 +77,19 @@ void LoadAllImages(){
  *
  */
 int main() {
+    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners,transformedImage,sharp,diff;
+    std::vector<cv::Point> corners,refCornerPoints;
+
     LoadAllImages();
-    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners,transformedImage;
-    std::vector<cv::Point> corners,closest;
+
+    /*
+     * Take a single book picture and find the top left, bottom left, bottom right, top right blue pixels
+     * return a vector of those pixels and use them as destination points for transformations
+     *
+     * This should preserve the aspect ratio of the images
+     */
+    refCornerPoints = FindTemplateCorners(pageImages[0]);
+
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
         /*
          * Detect the white page and apply it as a mask to the original image.
@@ -87,9 +112,8 @@ int main() {
         /*
          * Draw the corners that were found
          */
-        drawingWithCorners = transformer.Draw(viewImages[imageIndex],corners);
-        transformedImage = transformer.Transform(viewImages[imageIndex],corners);
-        transformedImage = JoinImagesHorizontally(pageImages[0],transformedImage,10);
+        drawingWithCorners = transformer.Draw(viewImages[imageIndex],refCornerPoints);
+        transformedImage = transformer.Transform(viewImages[imageIndex],corners,refCornerPoints);
         ShowImage("Corners",transformedImage);
 
     }

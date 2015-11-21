@@ -79,7 +79,7 @@ int dst(int x1, int y1, int x2, int y2){
 }
 
 
-cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners) {
+cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners,std::vector<cv::Point> dst) {
     cv::Mat matrix;
     int x1 = corners[TOP_MOST_POINT].x;
     int y1 = corners[TOP_MOST_POINT].y;
@@ -89,22 +89,7 @@ cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners) {
     int y3 = corners[BOTTOM_MOST_POINT].y;
     int x4 = corners[RIGHT_MOST_POINT].x;
     int y4 = corners[RIGHT_MOST_POINT].y;
-//    int height1 = dst(x1,y1,x2,y2);
-//    int height2 = dst(x4,y4,x3,y3);
-//    int width1 = dst(x1,y1,x4,y4);
-//    int width2 = dst(x2,y2,x3,y3);
-    int width1 = 408;
-    int height1 = 598;
-//    debugMessage(std::to_string(height1) +"x" + std::to_string(width1));
-//    debugMessage(std::to_string(height2) +"x" + std::to_string(width2));
-//    debugMessage("-----------------------------");
-//    if(height1 < height2){
-//        height1 = height2;
-//    }
-//    if(width1 < width2){
-//        width1 = width2;
-//    }
-    cv::Mat result(height1,width1,src.type());
+    cv::Mat result;
     cv::Point2f srcTransf[4],dstTransf[4];
 
     srcTransf[0] = cv::Point2f(x1,y1);
@@ -112,15 +97,56 @@ cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners) {
     srcTransf[2] = cv::Point2f(x3,y3);
     srcTransf[3] = cv::Point2f(x4,y4);
 
-    dstTransf[2] = cv::Point2f(0,0);//x1
-    dstTransf[1] = cv::Point2f(0, height1);//x2
-    dstTransf[0] = cv::Point2f(width1, height1);//x3
-    dstTransf[3] = cv::Point2f(width1,0);//x4
-
-//    matrix = cv::getAffineTransform(srcTransf,dstTransf);
-//    cv::warpAffine(src, result,matrix, result.size());
+    dstTransf[2] = cv::Point2f(dst[0].x,dst[0].y);
+    dstTransf[1] = cv::Point2f(dst[1].x, dst[1].y);
+    dstTransf[0] = cv::Point2f(dst[2].x, dst[2].y);
+    dstTransf[3] = cv::Point2f(dst[3].x,dst[3].y);
     matrix = cv::getPerspectiveTransform(srcTransf,dstTransf);
     cv::warpPerspective(src,result,matrix,result.size());
 
+    return result;
+}
+cv::Mat Transformer::UnsharpMask(cv::Mat im)
+{
+    cv::Mat tmp;
+    cv::GaussianBlur(im, tmp, cv::Size(5,5), 5);
+    cv::addWeighted(im, 1.5, tmp, -0.5, 0, im);
+    return im;
+}
+
+std::vector<cv::Point> Transformer::FindTemplateCorners(cv::Mat dots) {
+    cv::Mat whitePx;
+    cv::findNonZero(dots,whitePx);
+    int highestX = 0, highestY =0,lowestX = std::numeric_limits<int>::max(),lowestY=std::numeric_limits<int>::max();
+    std::vector<cv::Point> result;
+    for (size_t i = 0; i < whitePx.total(); i++ ) {
+        cv::Point p = whitePx.at<cv::Point>((int) i);
+        int x = p.x,y=p.y;
+        if(x>highestX){
+            highestX = x;
+//            result[RIGHT_MOST_POINT] = p;
+        }
+        if(x < lowestX){
+            lowestX = x;
+//            result[LEFT_MOST_POINT] = p;
+        }
+        if(y> highestY){
+            highestY = y;
+//            result[TOP_MOST_POINT] = p;
+        }
+        if(y < lowestY){
+            lowestY = y;
+//            result[BOTTOM_MOST_POINT] = p;
+        }
+    }
+    debugMessage("("+std::to_string(lowestX)+","+std::to_string(lowestY)+")");
+    debugMessage("("+std::to_string(lowestX)+","+std::to_string(highestY)+")");
+    debugMessage("("+std::to_string(highestX)+","+std::to_string(highestY)+")");
+    debugMessage("("+std::to_string(highestX)+","+std::to_string(lowestY)+")");
+    debugMessage("-------------------------");
+    result.push_back(cv::Point(lowestX,lowestY));
+    result.push_back(cv::Point(lowestX,highestY));
+    result.push_back(cv::Point(highestX,highestY));
+    result.push_back(cv::Point(highestX,lowestY));
     return result;
 }
