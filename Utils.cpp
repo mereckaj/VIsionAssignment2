@@ -34,8 +34,9 @@ cv::Mat StretchImage( cv::Mat& image )
 
     return result;
 }
-cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing)
+cv::Mat JoinImagesHorizontally(cv::Mat image1, cv::Mat image2, int spacing, int scale)
 {
+    cv::Size s;
     cv::Mat result( (image1.rows > image2.rows) ? image1.rows : image2.rows,
                 image1.cols + image2.cols + spacing,
                 image1.type() );
@@ -50,19 +51,28 @@ cv::Mat JoinImagesHorizontally( cv::Mat& image1, cv::Mat& image2, int spacing)
     }
     imageROI = result(cv::Rect(image1.cols+spacing,0,image2.cols,image2.rows));
     image2.copyTo(imageROI);
+    if(scale==0){
+        s = cv::Size(result.cols,result.rows);
+    }else if(scale < 1){
+        scale = scale * -1;
+        s = cv::Size((result.cols/scale),(result.rows/scale));
+    }else if(scale > 1){
+        s = cv::Size((result.cols*scale),(result.rows*scale));
+    }
+    cv::resize(result,result,s);
     return result;
 }
 void ShowImage(std::string title,cv::Mat src){
     cv::imshow(title,src);
-    cv::moveWindow(title,50,10);
+    cv::moveWindow(title,0,0);
     cv::waitKey(0);
     cv::destroyWindow(title);
 }
 void ShowImage(std::string title,cv::Mat src,cv::Mat src2){
-    ShowImage(title,JoinImagesHorizontally(src,src2,5));
+    ShowImage(title, JoinImagesHorizontally(src, src2, 5, 0));
 }
 void ShowImage(std::string title,cv::Mat src,cv::Mat src2,cv::Size scale){
-    cv::Mat joinedScaled,joined = JoinImagesHorizontally(src,src2,5);
+    cv::Mat joinedScaled,joined = JoinImagesHorizontally(src, src2, 5, 0);
     cv::resize(joined,joinedScaled,scale,0,0,CV_INTER_NN);
     ShowImage(title,joinedScaled);
 }

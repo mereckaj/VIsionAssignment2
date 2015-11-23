@@ -124,29 +124,35 @@ std::vector<cv::Point> Transformer::FindTemplateCorners(cv::Mat dots) {
         int x = p.x,y=p.y;
         if(x>highestX){
             highestX = x;
-//            result[RIGHT_MOST_POINT] = p;
         }
         if(x < lowestX){
             lowestX = x;
-//            result[LEFT_MOST_POINT] = p;
         }
         if(y> highestY){
             highestY = y;
-//            result[TOP_MOST_POINT] = p;
         }
         if(y < lowestY){
             lowestY = y;
-//            result[BOTTOM_MOST_POINT] = p;
         }
     }
-    debugMessage("("+std::to_string(lowestX)+","+std::to_string(lowestY)+")");
-    debugMessage("("+std::to_string(lowestX)+","+std::to_string(highestY)+")");
-    debugMessage("("+std::to_string(highestX)+","+std::to_string(highestY)+")");
-    debugMessage("("+std::to_string(highestX)+","+std::to_string(lowestY)+")");
-    debugMessage("-------------------------");
     result.push_back(cv::Point(lowestX,lowestY));
     result.push_back(cv::Point(lowestX,highestY));
     result.push_back(cv::Point(highestX,highestY));
     result.push_back(cv::Point(highestX,lowestY));
     return result;
+}
+cv::Mat Transformer::Crop(cv::Mat src, cv::Mat ref){
+    cv::Mat res;
+    cv::Rect cropRect(0,0,ref.cols,ref.rows);
+    res = src(cropRect);
+    return res;
+}
+
+cv::Mat Transformer::Sharpen(cv::Mat src) {
+    cv::Mat img32,lap,sharp,res;
+    src.convertTo(img32,CV_32F);
+    cv::Laplacian(src,lap,CV_32F,3);
+    sharp = img32 - (0.3*lap);
+    sharp.convertTo(res,CV_8U);
+    return res;
 }

@@ -20,6 +20,10 @@ public:
 
     std::vector<cv::Point> FindTemplateCorners(cv::Mat mat);
 
+    cv::Mat Crop(cv::Mat src, cv::Mat ref);
+
+    cv::Mat Sharpen(cv::Mat src);
+
 private:
     cv::Mat mImage;
     std::vector<std::vector<cv::Point>> mPoints;

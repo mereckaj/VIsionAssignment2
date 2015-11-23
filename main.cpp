@@ -8,6 +8,7 @@
 #include "Headers/PageDetector.hpp"
 #include "Headers/Transformer.hpp"
 #include "Headers/LineDetector.hpp"
+#include "Headers/TemplateMatcher.hpp"
 
 
 #define RIGHT_MOST_POINT 0
@@ -26,7 +27,8 @@ const std::vector<std::string> viewFiles =
             "BookView14.JPG","BookView15.JPG","BookView16.JPG","BookView17.JPG",
             "BookView01.JPG","BookView18.JPG","BookView19.JPG","BookView20.JPG",
             "BookView21.JPG","BookView22.JPG","BookView23.JPG","BookView24.JPG",
-//            "BookView25.JPG","BookView26.JPG","BookView27.JPG","BookView28.JPG",
+            "BookView25.JPG"
+//                            ,"BookView26.JPG","BookView27.JPG","BookView28.JPG",
 //            "BookView29.JPG","BookView30.JPG","BookView31.JPG","BookView32.JPG",
 //            "BookView33.JPG","BookView34.JPG","BookView35.JPG","BookView36.JPG",
 //            "BookView37.JPG","BookView38.JPG","BookView39.JPG","BookView40.JPG",
@@ -76,8 +78,40 @@ std::vector<cv::Point> FindTemplateCorners(cv::Mat templ){
  * Contours
  *
  */
+void rect(cv::Mat src,cv::Mat s2) {
+    using namespace cv;
+    using namespace std;
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+
+    RNG rng(12345);
+    findContours( src, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    vector<RotatedRect> minRect( contours.size() );
+
+    for(int i = 0; i < contours.size(); i++ )
+    {
+        minRect[i] = minAreaRect( Mat(contours[i]) );
+    }
+
+    Mat drawing = Mat::zeros( src.size(), CV_8UC3 );
+    for( int i = 0; i< contours.size(); i++ )
+    {
+        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+        // contour
+        drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+        // rotated rectangle
+        Point2f rect_points[4]; minRect[i].points( rect_points );
+        for( int j = 0; j < 4; j++ ) {
+            line(s2, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
+        }
+    }
+    ShowImage("",drawing);
+}
+
 int main() {
-    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners,transformedImage,sharp,diff;
+    std::vector<int> receivedResults(viewFiles.size());
+    int actaulResults[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,2,3,5,4,7,9,8,7,11,13,12,2};
+    cv::Mat detectedPage,maskedImage,dots,drawingWithCorners,transformedImage,transformedCropped,sharpened;
     std::vector<cv::Point> corners,refCornerPoints;
 
     LoadAllImages();
@@ -96,26 +130,40 @@ int main() {
          */
         PageDetector pageDetector(viewImages[imageIndex]);
         detectedPage = pageDetector.DetectPage();
-        maskedImage = pageDetector.ApplyMask(viewImages[imageIndex],detectedPage);
 
+        maskedImage = pageDetector.ApplyMask(viewImages[imageIndex],detectedPage);
+        Transformer transformer(maskedImage);
         /*
          * Search for blue dots in the masked image
          */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
+//        rect(dots,maskedImage);
         /*
          * Transform the image
          */
-        Transformer transformer(maskedImage);
         corners = transformer.FindCorners(dots);
 
         /*
-         * Draw the corners that were found
+         * Draw the corners that were dfound
          */
-        drawingWithCorners = transformer.Draw(viewImages[imageIndex],refCornerPoints);
+//        drawingWithCorners = transformer.Draw(viewImages[imageIndex],corners);
         transformedImage = transformer.Transform(viewImages[imageIndex],corners,refCornerPoints);
-        ShowImage("Corners",transformedImage);
-
+//        transformedCropped = transformer.Crop(transformedImage,pageImages[0]);
+//        sharpened = transformer.Sharpen(transformedImage);
+        sharpened = transformedImage;
+        /*
+         * Match the image with a template
+         *
+    //     */
+        TemplateMatcher templateMatcher(sharpened,pageImages, (int) pageFiles.size());
+        int matchedPage = templateMatcher.Match();
+//        debugMessage("Matched with image: " + std::to_string(matchedPage));
+//        ShowImage("Result",JoinImagesHorizontally(sharpened,pageImages[matchedPage],10));
+        receivedResults[imageIndex] = matchedPage;
+    }
+    for(int i = 0; i < viewFiles.size();i++){
+        debugMessage("Matched: " + std::to_string(receivedResults[i]) + "\tActual: " + std::to_string(actaulResults[i]) + "\tCorrect: " + std::to_string(receivedResults[i]==actaulResults[i]));
     }
     return EXIT_SUCCESS;
 }
