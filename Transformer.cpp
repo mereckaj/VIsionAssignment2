@@ -170,8 +170,7 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
     for (size_t i = 0; i < corners.size(); i++) {
         switch (i) {
             case TOP_MOST_POINT:
-                topLine.push_back(corners[TOP_MOST_POINT]);
-                debugMessage("Pushing top");
+//                topLine.push_back(corners[TOP_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
                     // Check that current point is not TOP_MOST or RIGHT_MOST
@@ -185,20 +184,17 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                                 // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y > corners[TOP_MOST_POINT].y) &&
                                     (currentPoint.y < corners[RIGHT_MOST_POINT].y)) {
-                                    debugMessage("Pushed (" + std::to_string(currentPoint.x) + "," +
-                                                 std::to_string(currentPoint.y) + ")");
                                     topLine.push_back(currentPoint);
                                 }
                             }
                         }
                     }
                 }
-                topLine.push_back(corners[RIGHT_MOST_POINT]);
+//                topLine.push_back(corners[RIGHT_MOST_POINT]);
                 break;
             case LEFT_MOST_POINT:
                 //TODO: Fix this, bad logic
-                leftLine.push_back(corners[LEFT_MOST_POINT]);
-                debugMessage("Pushing left");
+//                leftLine.push_back(corners[LEFT_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
                     // Check that current point is not TOP_MOST
@@ -213,19 +209,16 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                                 // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y < corners[LEFT_MOST_POINT].y) &&
                                     (currentPoint.y > corners[TOP_MOST_POINT].y)) {
-                                    debugMessage("Pushed (" + std::to_string(currentPoint.x) + "," +
-                                                 std::to_string(currentPoint.y) + ")");
                                     leftLine.push_back(currentPoint);
                                 }
                             }
                         }
                     }
                 }
-                leftLine.push_back(corners[TOP_MOST_POINT]);
+//                leftLine.push_back(corners[TOP_MOST_POINT]);
                 break;
             case BOTTOM_MOST_POINT:
-                botLine.push_back(corners[BOTTOM_MOST_POINT]);
-                debugMessage("Pushing bot");
+//                botLine.push_back(corners[BOTTOM_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
                     // Check that current point is not BOT_MOST or LEFT_MOST
@@ -239,19 +232,16 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                                 // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y > corners[LEFT_MOST_POINT].y) &&
                                     (currentPoint.y < corners[BOTTOM_MOST_POINT].y)) {
-                                    debugMessage("Pushed (" + std::to_string(currentPoint.x) + "," +
-                                                 std::to_string(currentPoint.y) + ")");
                                     botLine.push_back(currentPoint);
                                 }
                             }
                         }
                     }
                 }
-                botLine.push_back(corners[LEFT_MOST_POINT]);
+//                botLine.push_back(corners[LEFT_MOST_POINT]);
                 break;
             case RIGHT_MOST_POINT:
-                rightLine.push_back(corners[BOTTOM_MOST_POINT]);
-                debugMessage("Pushing right");
+//                rightLine.push_back(corners[BOTTOM_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
                     // Check that current point is not BOT_MOST or LEFT_MOST
@@ -265,15 +255,13 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                                 // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y < corners[BOTTOM_MOST_POINT].y) &&
                                     (currentPoint.y > corners[RIGHT_MOST_POINT].y)) {
-                                    debugMessage("Pushed (" + std::to_string(currentPoint.x) + "," +
-                                                 std::to_string(currentPoint.y) + ")");
                                     rightLine.push_back(currentPoint);
                                 }
                             }
                         }
                     }
                 }
-                rightLine.push_back(corners[RIGHT_MOST_POINT]);
+//                rightLine.push_back(corners[RIGHT_MOST_POINT]);
                 break;
         }
     }
@@ -304,32 +292,24 @@ std::vector<cv::Vec4f> Transformer::LinesOfBestFit(std::vector<std::vector<cv::P
     for(size_t i = 0; i < lines.size(); i++){
         auto current = lines[i];
         cv::Vec4f line;
-        cv::fitLine(current,line,CV_DIST_FAIR,0,0.01,0.01);
+        cv::fitLine(current,line,CV_DIST_HUBER,0,0.01,0.01);
         result.push_back(line);
     }
     return result;
 }
 cv::Mat Transformer::DrawVectorLines(cv::Mat src, std::vector<cv::Vec4f> vecs){
-    int t = 500;
+    int t = 1000;
     cv::Scalar color;
-    for(size_t i = 0; vecs.size(); i++){
-        if (i == 0) {
-            // red line
-            color = cv::Scalar(0, 0, 255);
-        } else if (i == 1) {
-            //blue
-            color = cv::Scalar(255, 0, 0);
-        } else if (i == 2) {
-            //green
-            color = cv::Scalar(0, 255, 0);
-        } else if (i == 3) {
-            // yellow
-            color = cv::Scalar(0, 255, 255);
-        } else {
-            color = cv::Scalar(255, 255, 0);
-        }
-        cv::line(src,cv::Point(vecs[i][2],vecs[i][3]),cv::Point(vecs[i][2]+vecs[i][0]*t,vecs[i][3]*vecs[i][1]*t),color);
-    }
+    color = cv::Scalar(0,0,255);
+    cv::line(src,cv::Point(vecs[0][2],vecs[0][3]),cv::Point(vecs[0][2]+vecs[0][0]*t,vecs[0][3]+vecs[0][1]*t),color);
+    cv::line(src,cv::Point(vecs[1][2],vecs[1][3]),cv::Point(vecs[1][2]+vecs[1][0]*t,vecs[1][3]+vecs[1][1]*t),color);
+    cv::line(src,cv::Point(vecs[2][2],vecs[2][3]),cv::Point(vecs[2][2]+vecs[0][0]*t,vecs[2][3]+vecs[2][1]*t),color);
+    cv::line(src,cv::Point(vecs[3][2],vecs[3][3]),cv::Point(vecs[3][2]+vecs[1][0]*t,vecs[3][3]+vecs[3][1]*t),color);
+    t = t * -1;
+    cv::line(src,cv::Point(vecs[0][2],vecs[0][3]),cv::Point(vecs[0][2]+vecs[0][0]*t,vecs[0][3]+vecs[0][1]*t),color);
+    cv::line(src,cv::Point(vecs[1][2],vecs[1][3]),cv::Point(vecs[1][2]+vecs[1][0]*t,vecs[1][3]+vecs[1][1]*t),color);
+    cv::line(src,cv::Point(vecs[2][2],vecs[2][3]),cv::Point(vecs[2][2]+vecs[0][0]*t,vecs[2][3]+vecs[2][1]*t),color);
+    cv::line(src,cv::Point(vecs[3][2],vecs[3][3]),cv::Point(vecs[3][2]+vecs[1][0]*t,vecs[3][3]+vecs[3][1]*t),color);
     return src;
 }
 cv::Mat Transformer::DrawLine(cv::Mat img, std::vector<std::vector<cv::Point>> lines) {
@@ -353,7 +333,8 @@ cv::Mat Transformer::DrawLine(cv::Mat img, std::vector<std::vector<cv::Point>> l
         }
         if (lines[i].size() > 2) {
             for (size_t j = 0; j < lines[i].size() - 1; j++) {
-                cv::line(img, lines[i][j], lines[i][j + 1], color, 10);
+//                cv::line(img, lines[i][j], lines[i][j + 1], color);
+                cv::circle(img,lines[i][j],5,color,-1);
             }
         }
     }

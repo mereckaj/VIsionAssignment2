@@ -29,10 +29,8 @@ cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
     backProjectProb= BackProjectBluePixels(backProjectSample,mBinCount);
     binary = Threshold(backProjectProb);
     ed = ErodeDilate(binary);
-    thin = Thinning(ed);
-    d2 = DilateErode(thin);
-    t2 = Thinning(d2);
-    return t2;
+    d2 = DilateErode(ed);
+    return d2;
 }
 std::vector<std::vector<cv::Point>> PointDetector::DotsToPoints(cv::Mat src){
     std::vector<std::vector<cv::Point>> contours;

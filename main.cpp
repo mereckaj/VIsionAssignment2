@@ -124,7 +124,7 @@ int main() {
      */
     refCornerPoints = FindTemplateCorners(pageImages[0]);
 
-    for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
+    for(size_t imageIndex = 13; imageIndex < viewFiles.size();imageIndex++){
 
         /*
          * Detect the white page and apply it as a mask to the original image.
@@ -140,14 +140,18 @@ int main() {
          */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
-//        ShowImage("",dots);
+        ShowImage("",dots);
         /*
          * Transform the image
          */
         corners = transformer.FindCorners(dots);
         std::vector<std::vector<cv::Point>> lines = transformer.FindClosest(corners,dots);
-//        cv::Mat draw = transformer.DrawLine(maskedImage,lines);
-        ShowImage("LOBF",transformer.DrawVectorLines(maskedImage,transformer.LinesOfBestFit(lines)));
+        std::vector<cv::Vec4f> bestFitLines = transformer.LinesOfBestFit(lines);
+        cv::Mat vectors = transformer.DrawVectorLines(maskedImage,bestFitLines);
+        if(bestFitLines.size()>=4){
+//            corners = transformer.LinesOfBestFitIntersections();
+//            ShowImage("LOBF",vectors);
+        }
         /*
          * Draw the corners that were dfound
          */
@@ -160,9 +164,10 @@ int main() {
         TemplateMatcher templateMatcher(transformedImage,pageImages, (int) pageFiles.size());
         int matchedPage = templateMatcher.Match();
         receivedResults[imageIndex] = matchedPage;
+
     }
     for(int i = 0; i < viewFiles.size();i++){
-        debugMessage("Matched: " + std::to_string(receivedResults[i]) + "\tActual: " + std::to_string(actaulResults[i]) + "\tCorrect: " + std::to_string(receivedResults[i]==actaulResults[i]));
+        debugMessage("[" + std::to_string(i) +"]" + " Matched: " + std::to_string(receivedResults[i]) + "\tActual: " + std::to_string(actaulResults[i]) + "\tCorrect: " + std::to_string(receivedResults[i]==actaulResults[i]));
     }
     return EXIT_SUCCESS;
 }
