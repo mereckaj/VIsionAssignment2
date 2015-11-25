@@ -64,7 +64,7 @@ int TemplateMatcher::Match() {
         minMaxLoc(correlation_image, &min_correlation, &max_correlation);
 //        debugMessage("[" + std::to_string(i) +"]" + "Min: " + std::to_string(min_correlation) + "\tMax:" + std::to_string(max_correlation));
         max.push_back(max_correlation);
-        FindLocalMaxima(correlation_image, matched_template_map, max_correlation * 0.99);
+//        FindLocalMaxima(correlation_image, matched_template_map, max_correlation * 0.99);
 //        Mat matched_template_display1;
 //        cvtColor(matched_template_map, matched_template_display1, CV_GRAY2BGR);
 //        DrawMatchingTemplateRectangles(display_image, matched_template_map, tmplt, Scalar(0, 0, 255));

@@ -125,6 +125,7 @@ int main() {
     refCornerPoints = FindTemplateCorners(pageImages[0]);
 
     for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
+
         /*
          * Detect the white page and apply it as a mask to the original image.
          */
@@ -133,33 +134,31 @@ int main() {
 
         maskedImage = pageDetector.ApplyMask(viewImages[imageIndex],detectedPage);
         Transformer transformer(maskedImage);
+
         /*
          * Search for blue dots in the masked image
          */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
-//        rect(dots,maskedImage);
+//        ShowImage("",dots);
         /*
          * Transform the image
          */
         corners = transformer.FindCorners(dots);
-
+        std::vector<std::vector<cv::Point>> lines = transformer.FindClosest(corners,dots);
+//        cv::Mat draw = transformer.DrawLine(maskedImage,lines);
+        ShowImage("LOBF",transformer.DrawVectorLines(maskedImage,transformer.LinesOfBestFit(lines)));
         /*
          * Draw the corners that were dfound
          */
-//        drawingWithCorners = transformer.Draw(viewImages[imageIndex],corners);
         transformedImage = transformer.Transform(viewImages[imageIndex],corners,refCornerPoints);
-//        transformedCropped = transformer.Crop(transformedImage,pageImages[0]);
-//        sharpened = transformer.Sharpen(transformedImage);
-        sharpened = transformedImage;
+
         /*
          * Match the image with a template
          *
-    //     */
-        TemplateMatcher templateMatcher(sharpened,pageImages, (int) pageFiles.size());
+         */
+        TemplateMatcher templateMatcher(transformedImage,pageImages, (int) pageFiles.size());
         int matchedPage = templateMatcher.Match();
-//        debugMessage("Matched with image: " + std::to_string(matchedPage));
-//        ShowImage("Result",JoinImagesHorizontally(sharpened,pageImages[matchedPage],10));
         receivedResults[imageIndex] = matchedPage;
     }
     for(int i = 0; i < viewFiles.size();i++){

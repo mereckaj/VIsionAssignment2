@@ -24,9 +24,19 @@ public:
 
     cv::Mat Sharpen(cv::Mat src);
 
+    std::vector<std::vector<cv::Point>> FindClosest(std::vector<cv::Point> corners, cv::Mat dots);
+
+    cv::Mat DrawLine(cv::Mat mat, std::vector<std::vector<cv::Point>> vector);
+
+    std::vector<cv::Vec4f> LinesOfBestFit(std::vector<std::vector<cv::Point>> lines);
+    cv::Mat DrawVectorLines(cv::Mat src,std::vector<cv::Vec4f> vecs);
 private:
     cv::Mat mImage;
     std::vector<std::vector<cv::Point>> mPoints;
+
+
+    std::vector<cv::Point> WhitePixelsToPoints(cv::Mat dots);
+
 
 };
 #endif //VISIONASSIGNMENT2_TRANSFORMER_H
