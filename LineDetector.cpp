@@ -126,6 +126,6 @@ cv::Mat LineDetector::LineFit(std::vector<cv::Point> dots,cv::Mat mImage){
     cv::line(mImage,cv::Point((int) t[2], (int) t[3]),cv::Point((int) (t[2]+t[0]*1000), (int) (t[3]+t[1]*1000)),cv::Scalar(0,0,255));
     cv::line(mImage,cv::Point((int) t[2], (int) t[3]),cv::Point((int) (t[2]+t[0]*-1000), (int) (t[3]+t[1]*-1000)),cv::Scalar(0,0,255));
     cv::circle(mImage,cv::Point((int) t[2], (int) t[3]),4,cv::Scalar(0,0,255));
-    ShowImage("",mImage);
+//    ShowImage("",mImage);
     return output;
 }

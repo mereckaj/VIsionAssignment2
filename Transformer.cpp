@@ -14,6 +14,8 @@
 #define TOP_MOST_POINT 2
 #define BOTTOM_MOST_POINT 3
 
+cv::RNG rng(12345);
+
 Transformer::Transformer() {
 
 }
@@ -67,13 +69,10 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots) {
     return result;
 }
 
-cv::Mat Transformer::Draw(cv::Mat src, std::vector<cv::Point> points) {
-//    for(size_t i = 0; i < points.size();i++){
-    cv::circle(src, points.at(0), 10, cv::Scalar(0, 0, 255), -1);
-    cv::circle(src, points.at(1), 10, cv::Scalar(0, 255, 0), -1);
-    cv::circle(src, points.at(2), 10, cv::Scalar(255, 0, 0), -1);
-    cv::circle(src, points.at(3), 10, cv::Scalar(0, 255, 255), -1);
-//    }
+cv::Mat Transformer::Draw(cv::Mat src, std::vector<cv::Point> points, cv::Scalar color) {
+    for (size_t i = 0; i < points.size(); i++) {
+        cv::circle(src, points[i], 2, color, -1);
+    }
     return src;
 }
 
@@ -158,10 +157,6 @@ std::vector<cv::Point> Transformer::WhitePixelsToPoints(cv::Mat dots) {
     return result;
 }
 
-//#define RIGHT_MOST_POINT 0
-//#define LEFT_MOST_POINT 1
-//#define TOP_MOST_POINT 2
-//#define BOTTOM_MOST_POINT 3
 std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Point> corners, cv::Mat dots) {
     std::vector<std::vector<cv::Point>> result(4);
     std::vector<cv::Point> topLine, botLine, leftLine, rightLine;
@@ -287,31 +282,46 @@ cv::Mat Transformer::Sharpen(cv::Mat src) {
     sharp.convertTo(res, CV_8U);
     return res;
 }
-std::vector<cv::Vec4f> Transformer::LinesOfBestFit(std::vector<std::vector<cv::Point>> lines){
+
+std::vector<cv::Vec4f> Transformer::LinesOfBestFit(std::vector<std::vector<cv::Point>> lines) {
+
     std::vector<cv::Vec4f> result;
-    for(size_t i = 0; i < lines.size(); i++){
+    for (size_t i = 0; i < lines.size(); i++) {
         auto current = lines[i];
+        if(lines[i].size()<2){
+            continue;
+        }
         cv::Vec4f line;
-        cv::fitLine(current,line,CV_DIST_HUBER,0,0.01,0.01);
+        cv::fitLine(current, line, CV_DIST_HUBER, 0, 0.01, 0.01);
         result.push_back(line);
+//        cv::fitLine(current, line, CV_DIST_HUBER, 2, 0.1, 0.1);
+//        result.push_back(line);
+//        cv::fitLine(current, line, CV_DIST_HUBER, 04, 0.0001, 0.0001);
+//        result.push_back(line);
     }
     return result;
 }
-cv::Mat Transformer::DrawVectorLines(cv::Mat src, std::vector<cv::Vec4f> vecs){
-    int t = 1000;
-    cv::Scalar color;
-    color = cv::Scalar(0,0,255);
-    cv::line(src,cv::Point(vecs[0][2],vecs[0][3]),cv::Point(vecs[0][2]+vecs[0][0]*t,vecs[0][3]+vecs[0][1]*t),color);
-    cv::line(src,cv::Point(vecs[1][2],vecs[1][3]),cv::Point(vecs[1][2]+vecs[1][0]*t,vecs[1][3]+vecs[1][1]*t),color);
-    cv::line(src,cv::Point(vecs[2][2],vecs[2][3]),cv::Point(vecs[2][2]+vecs[0][0]*t,vecs[2][3]+vecs[2][1]*t),color);
-    cv::line(src,cv::Point(vecs[3][2],vecs[3][3]),cv::Point(vecs[3][2]+vecs[1][0]*t,vecs[3][3]+vecs[3][1]*t),color);
-    t = t * -1;
-    cv::line(src,cv::Point(vecs[0][2],vecs[0][3]),cv::Point(vecs[0][2]+vecs[0][0]*t,vecs[0][3]+vecs[0][1]*t),color);
-    cv::line(src,cv::Point(vecs[1][2],vecs[1][3]),cv::Point(vecs[1][2]+vecs[1][0]*t,vecs[1][3]+vecs[1][1]*t),color);
-    cv::line(src,cv::Point(vecs[2][2],vecs[2][3]),cv::Point(vecs[2][2]+vecs[0][0]*t,vecs[2][3]+vecs[2][1]*t),color);
-    cv::line(src,cv::Point(vecs[3][2],vecs[3][3]),cv::Point(vecs[3][2]+vecs[1][0]*t,vecs[3][3]+vecs[3][1]*t),color);
+
+cv::Mat DrawLineItr(cv::Mat src, cv::Vec4f vect, int t, cv::Scalar color) {
+    cv::line(src, cv::Point(vect[2], vect[3]),
+             cv::Point(vect[2] + vect[0] * t, vect[3] + vect[1] * t),
+             color);
+    cv::line(src, cv::Point(vect[2], vect[3]),
+             cv::Point(vect[2] + vect[0] * (t * -1), vect[3] + vect[1] * (t * -1)),
+             color);
     return src;
 }
+
+cv::Mat Transformer::DrawVectorLines(cv::Mat src, std::vector<cv::Vec4f> vecs) {
+    int t = 1000;
+    for (size_t i = 0; i < vecs.size(); i++) {
+        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+        src = DrawLineItr(src, vecs[i], t, color);
+
+    }
+    return src;
+}
+
 cv::Mat Transformer::DrawLine(cv::Mat img, std::vector<std::vector<cv::Point>> lines) {
     debugMessage("Drawing");
     cv::Scalar color;
@@ -333,10 +343,92 @@ cv::Mat Transformer::DrawLine(cv::Mat img, std::vector<std::vector<cv::Point>> l
         }
         if (lines[i].size() > 2) {
             for (size_t j = 0; j < lines[i].size() - 1; j++) {
-//                cv::line(img, lines[i][j], lines[i][j + 1], color);
-                cv::circle(img,lines[i][j],5,color,-1);
+                cv::circle(img, lines[i][j], 5, color, -1);
             }
         }
     }
     return img;
+}
+
+std::vector<cv::Point> Transformer::FindCornersFromMoments(std::vector<cv::Point> momentCentres) {
+    std::vector<cv::Point> result(4);
+    int highestX = 0, highestY = 0, lowestX = std::numeric_limits<int>::max(), lowestY = std::numeric_limits<int>::max();
+    for (size_t i = 0; i < momentCentres.size(); i++) {
+        auto currentMoment = momentCentres[i];
+        if (currentMoment.x > highestX) {
+            highestX = currentMoment.x;
+            result[RIGHT_MOST_POINT] = currentMoment;
+        }
+        if (currentMoment.x < lowestX) {
+            lowestX = currentMoment.x;
+            result[LEFT_MOST_POINT] = currentMoment;
+        }
+        if (currentMoment.y > highestY) {
+            highestY = currentMoment.y;
+            result[BOTTOM_MOST_POINT] = currentMoment;
+        }
+        if (currentMoment.y < lowestY) {
+            lowestY = currentMoment.y;
+            result[TOP_MOST_POINT] = currentMoment;
+        }
+    }
+    return result;
+}
+
+cv::Point Transformer::Intersection(cv::Vec4f a, cv::Vec4f b,int t) {
+    cv::Point as(a[2], a[3]), bs(b[2], b[3]);
+    cv::Point ad(a[2] + a[0] * t, a[3] + a[1] * t);
+    cv::Point bd(b[2] + b[0] * t, b[3] + b[1] * t);
+
+//    dx = bs.x - as.x
+//    dy = bs.y - as.y
+//    det = bd.x * ad.y - bd.y * ad.x
+//    u = (dy * bd.x - dx * bd.y) / det
+//    v = (dy * ad.x - dx * ad.y) / det
+
+    double dx = bs.x - as.x;
+    double dy = bs.y - as.y;
+    double det = bd.x * ad.y - bd.y * ad.x;
+    double u = (dy * bd.x - dx * bd.y) / det;
+    double v = (dy * ad.x - dx * ad.y) /det;
+    if(u * v <0){
+        debugMessage("These lines do not intersec");
+        return cv::Point(-1,-1);
+    }
+    debugMessage("Caculated intersection at: (" + std::to_string(u) + "," + std::to_string(v) +")");
+    return cv::Point(u,v);
+}
+
+std::vector<cv::Point> Transformer::FindIntersections(cv::Mat src, std::vector<cv::Vec4f> rays) {
+//    for(size_t i = 0; i < rays.size(); i++){
+//    cv::circle(src,Intersection(rays[0],rays[2],1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[0],rays[2],-1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[2],rays[1],1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[2],rays[1],-1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[1],rays[3],1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[1],rays[3],-1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[3],rays[0],1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[3],rays[0],-1),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[0],rays[2],1000),5,cv::a:Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[0],rays[3]),5,cv::Scalar(0,0,255),-1);
+//
+//    cv::circle(src,Intersection(rays[1],rays[1]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[1],rays[2]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[1],rays[3]),5,cv::Scalar(0,0,255),-1);
+//
+//
+//    cv::circle(src,Intersection(rays[2],rays[1]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[2],rays[2]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[2],rays[3]),5,cv::Scalar(0,0,255),-1);
+//
+//    cv::circle(src,Intersection(rays[3],rays[1]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[3],rays[2]),5,cv::Scalar(0,0,255),-1);
+//    cv::circle(src,Intersection(rays[3],rays[3]),5,cv::Scalar(0,0,255),-1);
+//    }
+//    ShowImage("rays",src);
+//    2 = topLine;
+//    3 = botLine;
+//    1 = leftLine;
+//    0 = rightLine;
+    return std::vector<cv::Point>();
 }

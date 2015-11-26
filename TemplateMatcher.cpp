@@ -50,12 +50,14 @@ void FindLocalMaxima( Mat& input_image, Mat& local_maxima, double threshold_valu
 TemplateMatcher::TemplateMatcher() {
 }
 int TemplateMatcher::Match() {
-    Mat matched_template_map,display_image, correlation_image,tmplt;
+    Mat croppedTemplate,display_image, correlation_image,tmplt;
     int result_columns,result_rows;
     std::vector<double> max;
     double min_correlation, max_correlation;
     for(size_t i = 0; i < mPageCount; i++) {
-        resize(mPages[i], tmplt, Size((mPages[i].cols / SCALE), (mPages[i].rows / SCALE)));
+//        croppedTemplate = RemoveBlueLines(mPages[i]);
+        croppedTemplate = mPages[i];
+        resize(croppedTemplate, tmplt, Size((croppedTemplate.cols / SCALE), (croppedTemplate.rows / SCALE)));
         mImage.copyTo(display_image);
         result_columns = mImage.cols - tmplt.cols + 1;
         result_rows = mImage.rows - tmplt.rows + 1;
@@ -75,6 +77,7 @@ int TemplateMatcher::Match() {
     for(size_t i = 0; i < max.size();i++){
         if(max[i] > max[res]){
             res = (int) i;
+            mCor = max[res];
         }
     }
 //    debugMessage(std::to_string(res) + ":" + std::to_string(max[res]));
@@ -87,4 +90,9 @@ TemplateMatcher::TemplateMatcher(cv::Mat src,cv::Mat* pages, int pageCount) : Te
     mImage = tmp2;
     mPages = pages;
     mPageCount = pageCount;
+}
+
+cv::Mat TemplateMatcher::RemoveBlueLines(cv::Mat src) {
+    cv::Rect myROI(20,20,src.cols-40,src.rows - 40);
+    return src(myROI);
 }

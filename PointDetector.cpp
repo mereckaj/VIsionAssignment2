@@ -29,7 +29,10 @@ cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
     backProjectProb= BackProjectBluePixels(backProjectSample,mBinCount);
     binary = Threshold(backProjectProb);
     ed = ErodeDilate(binary);
+//    thin = Thinning(ed);
     d2 = DilateErode(ed);
+//    t2 = Thinning(d2);
+//    ShowImage("",d2);
     return d2;
 }
 std::vector<std::vector<cv::Point>> PointDetector::DotsToPoints(cv::Mat src){
@@ -142,4 +145,30 @@ cv::Mat PointDetector::DilateErode(cv::Mat src){
 
     //Return the dilated image matrix
     return mEroded;
+}
+
+std::vector<cv::Point> PointDetector::GetCenters(std::vector<std::vector<cv::Point>> contours) {
+
+    // Get moments
+    std::vector<cv::Moments> moments(contours.size());
+    for (size_t i = 0; i < contours.size();i++){
+        moments[i] = cv::moments( contours[i], false );
+    }
+
+
+    ///  Get the mass centers:
+    std::vector<cv::Point> mc( contours.size() );
+    for( int i = 0; i < contours.size(); i++ ) {
+        mc[i] = cv::Point((int) (moments[i].m10/moments[i].m00), (int) (moments[i].m01/moments[i].m00));
+    }
+
+    return mc;
+}
+
+cv::Mat PointDetector::DrawMoments(cv::Mat src, std::vector<cv::Point2f> moments) {
+    for(size_t i = 0 ; i < moments.size();i++){
+        cv::circle(src,moments[i],5,cv::Scalar::all(255),1);
+        cv::circle(src,moments[i],1,cv::Scalar(0,0,255),-1);
+    }
+    return src;
 }

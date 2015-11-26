@@ -18,6 +18,8 @@
 
 cv::Mat *pageImages,*viewImages,*backProjectSample;
 
+void Draw(cv::Mat src,std::vector<std::vector<cv::Point>> contours);
+
 const std::string IMAGE_LOCATION = "/home/mereckaj/Dev/ClionProjects/VisionAssignment2/Images/";
 const std::vector<std::string> viewFiles =
         {
@@ -28,13 +30,13 @@ const std::vector<std::string> viewFiles =
             "BookView01.JPG","BookView18.JPG","BookView19.JPG","BookView20.JPG",
             "BookView21.JPG","BookView22.JPG","BookView23.JPG","BookView24.JPG",
             "BookView25.JPG"
-//                            ,"BookView26.JPG","BookView27.JPG","BookView28.JPG",
-//            "BookView29.JPG","BookView30.JPG","BookView31.JPG","BookView32.JPG",
-//            "BookView33.JPG","BookView34.JPG","BookView35.JPG","BookView36.JPG",
-//            "BookView37.JPG","BookView38.JPG","BookView39.JPG","BookView40.JPG",
-//            "BookView41.JPG","BookView42.JPG","BookView43.JPG","BookView44.JPG",
-//            "BookView45.JPG","BookView46.JPG","BookView47.JPG","BookView48.JPG",
-//            "BookView49.JPG","BookView50.JPG"
+                            ,"BookView26.JPG","BookView27.JPG","BookView28.JPG",
+            "BookView29.JPG","BookView30.JPG","BookView31.JPG","BookView32.JPG",
+            "BookView33.JPG","BookView34.JPG","BookView35.JPG","BookView36.JPG",
+            "BookView37.JPG","BookView38.JPG","BookView39.JPG","BookView40.JPG",
+            "BookView41.JPG","BookView42.JPG","BookView43.JPG","BookView44.JPG",
+            "BookView45.JPG","BookView46.JPG","BookView47.JPG","BookView48.JPG",
+            "BookView49.JPG","BookView50.JPG"
         };
 const std::vector<std::string> pageFiles =
         {
@@ -71,42 +73,6 @@ std::vector<cv::Point> FindTemplateCorners(cv::Mat templ){
     corners = transformer.FindTemplateCorners(points);
     return corners;
 }
-/*
- * Back project
- * Threshold
- * Erode & Dilate
- * Contours
- *
- */
-void rect(cv::Mat src,cv::Mat s2) {
-    using namespace cv;
-    using namespace std;
-    vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
-
-    RNG rng(12345);
-    findContours( src, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-    vector<RotatedRect> minRect( contours.size() );
-
-    for(int i = 0; i < contours.size(); i++ )
-    {
-        minRect[i] = minAreaRect( Mat(contours[i]) );
-    }
-
-    Mat drawing = Mat::zeros( src.size(), CV_8UC3 );
-    for( int i = 0; i< contours.size(); i++ )
-    {
-        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        // contour
-        drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-        // rotated rectangle
-        Point2f rect_points[4]; minRect[i].points( rect_points );
-        for( int j = 0; j < 4; j++ ) {
-            line(s2, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
-        }
-    }
-    ShowImage("",drawing);
-}
 
 int main() {
     std::vector<int> receivedResults(viewFiles.size());
@@ -124,7 +90,7 @@ int main() {
      */
     refCornerPoints = FindTemplateCorners(pageImages[0]);
 
-    for(size_t imageIndex = 13; imageIndex < viewFiles.size();imageIndex++){
+    for(size_t imageIndex = 0; imageIndex < viewFiles.size();imageIndex++){
 
         /*
          * Detect the white page and apply it as a mask to the original image.
@@ -140,34 +106,47 @@ int main() {
          */
         PointDetector pointDetector(maskedImage,15,std::to_string(imageIndex));
         dots = pointDetector.DetectPoints(backProjectSample[0]);
-        ShowImage("",dots);
+        std::vector<std::vector<cv::Point>> conts = pointDetector.DotsToPoints(dots);
+        std::vector<cv::Point> moments = pointDetector.GetCenters(conts);
+        corners = transformer.FindCornersFromMoments(moments);
+        std::vector<std::vector<cv::Point>> closestPoints = transformer.FindClosest(corners,dots);
+        std::vector<cv::Vec4f> bestFitLines = transformer.LinesOfBestFit(closestPoints);
+
+        /*
+         * Find the corners that were of the image
+         */
+        cv::Mat rays = transformer.DrawVectorLines(maskedImage,bestFitLines);
+        std::vector<cv::Point> intersections = transformer.FindIntersections(maskedImage,bestFitLines);
+//        ShowImage(std::to_string(imageIndex), rays);
+
         /*
          * Transform the image
-         */
-        corners = transformer.FindCorners(dots);
-        std::vector<std::vector<cv::Point>> lines = transformer.FindClosest(corners,dots);
-        std::vector<cv::Vec4f> bestFitLines = transformer.LinesOfBestFit(lines);
-        cv::Mat vectors = transformer.DrawVectorLines(maskedImage,bestFitLines);
-        if(bestFitLines.size()>=4){
-//            corners = transformer.LinesOfBestFitIntersections();
-//            ShowImage("LOBF",vectors);
-        }
-        /*
-         * Draw the corners that were dfound
          */
         transformedImage = transformer.Transform(viewImages[imageIndex],corners,refCornerPoints);
 
         /*
          * Match the image with a template
-         *
          */
         TemplateMatcher templateMatcher(transformedImage,pageImages, (int) pageFiles.size());
         int matchedPage = templateMatcher.Match();
         receivedResults[imageIndex] = matchedPage;
+        debugMessage("[" + std::to_string(imageIndex) +"]" + " Matched: " + std::to_string(receivedResults[imageIndex]) + "\tActual: " +
+                             std::to_string(actaulResults[imageIndex]) + "\tCorrect: " + std::to_string(receivedResults[imageIndex]==actaulResults[imageIndex]));
 
+
+        /*
+         * Show matched image
+         */
+        cv::putText(transformedImage,std::to_string(templateMatcher.mCor),cv::Point(50,50),cv::FONT_HERSHEY_TRIPLEX,0.5,cv::Scalar(0,0,255));
     }
+    int correctResults = 0;
     for(int i = 0; i < viewFiles.size();i++){
-        debugMessage("[" + std::to_string(i) +"]" + " Matched: " + std::to_string(receivedResults[i]) + "\tActual: " + std::to_string(actaulResults[i]) + "\tCorrect: " + std::to_string(receivedResults[i]==actaulResults[i]));
+        if(receivedResults[i]==actaulResults[i]){
+            correctResults++;
+//            debugMessage("[" + std::to_string(i) +"]" + " Matched: " + std::to_string(receivedResults[i]) + "\tActual: " +
+//                         std::to_string(actaulResults[i]) + "\tCorrect: " + std::to_string(receivedResults[i]==actaulResults[i]));
+        }
     }
+    debugMessage("Correctness: " + std::to_string(correctResults)+"/" + std::to_string(viewFiles.size()));
     return EXIT_SUCCESS;
 }

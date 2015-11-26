@@ -15,6 +15,11 @@ public:
     cv::Mat Threshold(cv::Mat);
     cv::Mat BackProjectBluePixels(cv::Mat backProjectionSample, int binCount);
     std::vector<std::vector<cv::Point>> DotsToPoints(cv::Mat src);
+
+    std::vector<cv::Point> GetCenters(std::vector<std::vector<cv::Point>> contours);
+
+    cv::Mat DrawMoments(cv::Mat src, std::vector<cv::Point2f> moments);
+
 private:
     cv::Mat mImage;
     int mBinCount,mThresholdValue;
