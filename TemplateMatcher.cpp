@@ -54,5 +54,11 @@ int TemplateMatcher::Match() {
             mCor = correlationResults[res];
         }
     }
+    /*
+     * If the match is bellow 95% it's a bad match
+     */
+    if(correlationResults[res]<0.95){
+        return -1;
+    }
     return res;
 }

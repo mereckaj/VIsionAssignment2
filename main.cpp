@@ -17,7 +17,10 @@
 /*
  * Performance Metrics
  */
-int correct = 0;
+int TruePositive = 0;
+int FalsePositive = 0;
+int TrueNegative = 0;
+int FalseNegative = 0;
 std::vector<int> groundTruth = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 2, 3, 5, 4, 7, 9, 8, 7, 11, 13, 12, 2};
 
 /*
@@ -131,13 +134,23 @@ int main() {
         TemplateMatcher templateMatcher(transformedImage, pageImages, (int) pageFiles.size());
         matchedImageIndex = templateMatcher.Match();
 
-        // Ground truth starts counting from 1 while program start counting from 0
-        matchedImageIndex++;
+        if(matchedImageIndex==-1){
+            // No match found, since I only passed actual pages and it couldn't find it this is a Flase Negative
+            FalseNegative++;
+        }else {
+            // Ground truth starts counting from 1 while program start counting from 0
+            matchedImageIndex++;
 
-        if(matchedImageIndex==groundTruth[imageIndex]){
-            correct++;
+            if (matchedImageIndex == groundTruth[imageIndex]) {
+                TruePositive++;
+            }else{
+                FalsePositive++;
+            }
         }
     }
-    debugMessage("Correctness: " + std::to_string(correct)+"/" + std::to_string(viewFiles.size()));
+    debugMessage("TP: " + std::to_string(TruePositive)+"/" + std::to_string(viewFiles.size()));
+    debugMessage("FP: " + std::to_string(FalsePositive)+"/" + std::to_string(viewFiles.size()));
+    debugMessage("TN: " + std::to_string(TrueNegative)+"/" + std::to_string(viewFiles.size()));
+    debugMessage("FN: " + std::to_string(FalseNegative)+"/" + std::to_string(viewFiles.size()));
     return EXIT_SUCCESS;
 }

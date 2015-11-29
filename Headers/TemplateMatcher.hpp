@@ -19,6 +19,7 @@ private:
     cv::Mat mImage,*mPages;
     int mPageCount;
 
+    cv::Mat crep(cv::Mat mat);
 };
 
 #endif //VISIONASSIGNMENT2_TEMPLATEMATCHER_HPP
