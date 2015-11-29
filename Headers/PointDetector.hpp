@@ -14,9 +14,9 @@ public:
     cv::Mat DetectPoints(cv::Mat backProjectSample);
     cv::Mat Threshold(cv::Mat);
     cv::Mat BackProjectBluePixels(cv::Mat backProjectionSample, int binCount);
-    std::vector<std::vector<cv::Point>> DotsToPoints(cv::Mat src);
+    std::vector<std::vector<cv::Point>> BlueDotsToContours(cv::Mat src);
 
-    std::vector<cv::Point> GetCenters(std::vector<std::vector<cv::Point>> contours);
+    std::vector<cv::Point> GetCentres(std::vector<std::vector<cv::Point>> contours);
 
     cv::Mat DrawMoments(cv::Mat src, std::vector<cv::Point2f> moments);
 
@@ -25,8 +25,8 @@ private:
     int mBinCount,mThresholdValue;
     std::string mWindowTitle;
     cv::Mat ThinningIterator(cv::Mat,int);
-    cv::Mat ErodeDilate(cv::Mat);
-    cv::Mat DilateErode(cv::Mat);
+    cv::Mat Close(cv::Mat);
+    cv::Mat Open(cv::Mat);
     cv::Mat Thinning(cv::Mat);
 
 };

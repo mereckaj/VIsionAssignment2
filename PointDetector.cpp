@@ -15,114 +15,89 @@ PointDetector::~PointDetector() {
     mImage.deallocate();
 }
 PointDetector::PointDetector(){
+    // Use a magical bin count value. The higher the bin count the worse the algorithm works
     mBinCount = 4;
 }
+
 PointDetector::PointDetector(cv::Mat srcImage,int thresholdValue,std::string windowTitle) : PointDetector() {
     mImage = srcImage;
     mThresholdValue = thresholdValue;
     mWindowTitle = windowTitle;
 }
-//std::vector<std::vector<cv::Point>> PointDetector::DetectPoints(cv::Mat backProjectSample){
 
+/*
+ * Given a back projection sample back project it onto the image passed via the constructor
+ * Threshold the image and open and close it to get rid of some of the noise.
+ *
+ * This should return the possible blue dot positions
+ */
 cv::Mat PointDetector::DetectPoints(cv::Mat backProjectSample){
-    cv::Mat backProjectProb,binary,thin,ed,d2,t2,lines,liness;
+    cv::Mat backProjectProb,binary,ed,d2;
     backProjectProb= BackProjectBluePixels(backProjectSample,mBinCount);
     binary = Threshold(backProjectProb);
-    ed = ErodeDilate(binary);
-//    thin = Thinning(ed);
-    d2 = DilateErode(ed);
-//    t2 = Thinning(d2);
-//    ShowImage("",d2);
+    ed = Close(binary);
+    d2 = Open(ed);
     return d2;
 }
-std::vector<std::vector<cv::Point>> PointDetector::DotsToPoints(cv::Mat src){
+
+/*
+ * Given a binary image of possible locations of blue dots, perform the connected components operation
+ *
+ * This should return a vector of points that are part of a component, can then use it to find moments
+ * of these components and determine where the centre of the component is
+ *
+ * Without this step line fitting works but with some glitches
+ *
+ * Return a vector of vectors of points that form a component
+ */
+std::vector<std::vector<cv::Point>> PointDetector::BlueDotsToContours(cv::Mat src){
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(src,contours,CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
     return contours;
 }
-/**
- * Perform one thinning iteration.
- * Normally you wouldn't call this function directly from your code.
+/*
+ * Given an image and a back projection sample and a number of bins (Which is always 4 in this case, as define in the
+ * constructor) this function will perform the back projection
  *
- * @param  im    Binary image with range = 0-1
- * @param  iter  0=even, 1=odd
+ * Return a probability matrix
  */
-cv::Mat PointDetector::ThinningIterator(cv::Mat image, int iter) {
-    /*
-     * Source: http://opencv-code.com/quick-tips/implementation-of-thinning-algorithm-in-opencv/
-     */
-    cv::Mat marker = cv::Mat::zeros(image.size(), CV_8UC1);
-    for (int i = 1; i < image.rows-1; i++)
-    {
-        for (int j = 1; j < image.cols-1; j++)
-        {
-            uchar p2 = image.at<uchar>(i-1, j);
-            uchar p3 = image.at<uchar>(i-1, j+1);
-            uchar p4 = image.at<uchar>(i, j+1);
-            uchar p5 = image.at<uchar>(i+1, j+1);
-            uchar p6 = image.at<uchar>(i+1, j);
-            uchar p7 = image.at<uchar>(i+1, j-1);
-            uchar p8 = image.at<uchar>(i, j-1);
-            uchar p9 = image.at<uchar>(i-1, j-1);
-            int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
-                     (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
-                     (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
-                     (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
-            int B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-            int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
-            int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
-
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0) {
-                marker.at<uchar>(i, j) = 1;
-            }
-        }
-    }
-    image &= ~marker;
-    return image;
-}
-cv::Mat PointDetector::Thinning(cv::Mat image) {
-    /*
-     * Source: http://opencv-code.com/quick-tips/implementation-of-thinning-algorithm-in-opencv/
-     */
-    image /= 255;
-    cv::Mat prev = cv::Mat::zeros(image.size(), CV_8UC1);
-    cv::Mat diff;
-    do {
-        ThinningIterator(image, 0);
-        ThinningIterator(image, 1);
-        cv::absdiff(image, prev, diff);
-        image.copyTo(prev);
-    }
-    while (cv::countNonZero(diff) > 0);
-    image *= 255;
-    return image;
-}
 cv::Mat PointDetector::BackProjectBluePixels(cv::Mat backProjectionSample,int binCount){
-    cv::Mat mBackProjectSampleHLS,mHlsImage;
+    cv::Mat backProjectSampleHLS, hlsImage;
 
     //Convert back projection sample to HLS
-    cv::cvtColor(backProjectionSample, mBackProjectSampleHLS, CV_BGR2HLS);
-    //Create a 3D historgram of back projection sample
-    ColourHistogram histogram3D(mBackProjectSampleHLS,binCount);
+    cv::cvtColor(backProjectionSample, backProjectSampleHLS, CV_BGR2HLS);
+
+    //Create a 3D histogram of back projection sample
+    ColourHistogram histogram3D(backProjectSampleHLS,binCount);
     histogram3D.NormaliseHistogram();
 
     //Convert the image to HLS
-    cvtColor(mImage, mHlsImage, CV_BGR2HLS);
+    cvtColor(mImage, hlsImage, CV_BGR2HLS);
 
     //Back project the sample onto the image
-    cv::Mat backProjectionProbabilities = histogram3D.BackProject(mHlsImage);
+    cv::Mat backProjectionProbabilities = histogram3D.BackProject(hlsImage);
     backProjectionProbabilities = StretchImage(backProjectionProbabilities);
 
     //Return the probability matrix
     return backProjectionProbabilities;
 }
+
+/*
+ * Threshold the image, nothing more.
+ *
+ * Cleaner wrapper since OpenCV has terrible documentation that is confusing
+ */
 cv::Mat PointDetector::Threshold(cv::Mat probMatrix){
     cv::Mat mBinary;
     //Threshold the image;
     cv::threshold(probMatrix,mBinary,mThresholdValue,256,CV_THRESH_BINARY);
     return mBinary;
 }
-cv::Mat PointDetector::ErodeDilate(cv::Mat src){
+
+/*
+ * Again, wrappers
+ */
+cv::Mat PointDetector::Close(cv::Mat src){
     cv::Mat mEroded,mDilated;
 
     //Erode the image
@@ -134,7 +109,11 @@ cv::Mat PointDetector::ErodeDilate(cv::Mat src){
     //Return the dilated image matrix
     return mDilated;
 }
-cv::Mat PointDetector::DilateErode(cv::Mat src){
+
+/*
+ * Once more, wrappers
+ */
+cv::Mat PointDetector::Open(cv::Mat src){
     cv::Mat mEroded,mDilated;
 
     //Dilate the image
@@ -147,28 +126,24 @@ cv::Mat PointDetector::DilateErode(cv::Mat src){
     return mEroded;
 }
 
-std::vector<cv::Point> PointDetector::GetCenters(std::vector<std::vector<cv::Point>> contours) {
+/*
+ * Given a vector of vectors of points that form a component find where the centres are.
+ *
+ * Calculate it by getting the moments of each component
+ * Code straight out Compton ... I mean straight out of of the OpenCV website.
+ */
+std::vector<cv::Point> PointDetector::GetCentres(std::vector<std::vector<cv::Point>> contours) {
 
     // Get moments
     std::vector<cv::Moments> moments(contours.size());
     for (size_t i = 0; i < contours.size();i++){
         moments[i] = cv::moments( contours[i], false );
     }
-
-
-    ///  Get the mass centers:
+    // Get centres
     std::vector<cv::Point> mc( contours.size() );
     for( int i = 0; i < contours.size(); i++ ) {
         mc[i] = cv::Point((int) (moments[i].m10/moments[i].m00), (int) (moments[i].m01/moments[i].m00));
     }
 
     return mc;
-}
-
-cv::Mat PointDetector::DrawMoments(cv::Mat src, std::vector<cv::Point2f> moments) {
-    for(size_t i = 0 ; i < moments.size();i++){
-        cv::circle(src,moments[i],5,cv::Scalar::all(255),1);
-        cv::circle(src,moments[i],1,cv::Scalar(0,0,255),-1);
-    }
-    return src;
 }

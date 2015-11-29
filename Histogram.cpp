@@ -1,7 +1,6 @@
-//
-// Created by mereckaj on 11/17/15.
-//
-
+/*
+ * KDH's code, might have made some changes. Can't remember.
+ */
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>

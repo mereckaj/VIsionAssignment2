@@ -8,27 +8,37 @@
 #include "Headers/Utils.hpp"
 #include "Histogram.cpp"
 
+/*
+ * Detect the rough area of where the white page is in the image
+ */
 PageDetector::PageDetector() {
 }
 PageDetector::PageDetector(cv::Mat src) : PageDetector() {
     mImage = src;
-//    cv::resize(mImage,mImage,cv::Size(mImage.size().width/2,mImage.size().height/2),0,0,CV_INTER_NN);
 }
 PageDetector::~PageDetector() {
 }
+
+/*
+ * Take the original image
+ * Split it into individual RGB channels
+ * Threshold the red channel using OTSU's thresholding. This should get rid of the background really well.
+ * Erode and dilate to make sure the noise is minimal
+ * Return the result, it will be used as a mask.
+ */
 cv::Mat PageDetector::DetectPage(){
-    cv::Mat flood,colors[mImage.channels()],dme;
+    cv::Mat colors[mImage.channels()],dme;
     cv::split(mImage,colors);
     cv::threshold(colors[0],dme,0,255,CV_THRESH_BINARY|CV_THRESH_OTSU);
     cv::erode(dme,dme,cv::Mat());
     cv::dilate(dme,dme,cv::Mat());
-    /*
-     * TODO: Connected components and FloodFill to make sure full page is found
-     */
-//    cv::floodFill(dme,cv::Point(1,1),cv::Scalar(0));
     return dme;
 }
 
+/*
+ * Given the result of the above function apply it as a mask to each channel of the original image.
+ * This should make sure that only the white page is left in the original image, reducing noise.
+ */
 cv::Mat PageDetector::ApplyMask(cv::Mat src, cv::Mat mask) {
     cv::Mat result;
     std::vector<cv::Mat> channels((unsigned long) src.channels());

@@ -28,6 +28,9 @@ Transformer::Transformer(cv::Mat src) : Transformer() {
     mImage = src;
 }
 
+/*
+ * Given a binbary image of possible blue dot locations, return those as Point objects
+ */
 std::vector<cv::Point> Transformer::WhiteToPoints(cv::Mat src) {
     cv::Mat whitePx;
     cv::findNonZero(src, whitePx);
@@ -39,6 +42,9 @@ std::vector<cv::Point> Transformer::WhiteToPoints(cv::Mat src) {
 }
 
 /*
+ * Given a binary image of dots, find corners by looking for the pixels that are white and have the highest
+ * X, lowest X, highest Y and lowest Y.
+ *
  * Return 4 points: right most, left most, top most and bottom most (In that order)
  */
 std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots) {
@@ -69,21 +75,10 @@ std::vector<cv::Point> Transformer::FindCorners(cv::Mat dots) {
     return result;
 }
 
-cv::Mat Transformer::Draw(cv::Mat src, std::vector<cv::Point> points, cv::Scalar color) {
-    for (size_t i = 0; i < points.size(); i++) {
-        cv::circle(src, points[i], 2, color, -1);
-    }
-    return src;
-}
-
-int dst(int x1, int y1, int x2, int y2) {
-    int xs = x2 - x1;
-    int ys = y2 - y1;
-    int distance = (int) std::sqrt((xs * xs) + (ys * ys));
-    return distance;
-}
-
-
+/*
+ * Given the original image, a vector of corners and a vector of destinations
+ * Use perspective transformations to transform the image
+ */
 cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners, std::vector<cv::Point> dst) {
     cv::Mat matrix;
     int x1 = corners[TOP_MOST_POINT].x;
@@ -112,13 +107,13 @@ cv::Mat Transformer::Transform(cv::Mat src, std::vector<cv::Point> corners, std:
     return result;
 }
 
-cv::Mat Transformer::UnsharpMask(cv::Mat im) {
-    cv::Mat tmp;
-    cv::GaussianBlur(im, tmp, cv::Size(5, 5), 5);
-    cv::addWeighted(im, 1.5, tmp, -0.5, 0, im);
-    return im;
-}
-
+/*
+ * Gind the corners of the template image (Different from above method as these corners could have the same X or Y
+ * values where as in the method above the page is always at an angle
+ *
+ * Push the corners in the order:
+ * Top left, bot left, bot right, top right
+ */
 std::vector<cv::Point> Transformer::FindTemplateCorners(cv::Mat dots) {
     cv::Mat whitePx;
     cv::findNonZero(dots, whitePx);
@@ -147,17 +142,24 @@ std::vector<cv::Point> Transformer::FindTemplateCorners(cv::Mat dots) {
     return result;
 }
 
-std::vector<cv::Point> Transformer::WhitePixelsToPoints(cv::Mat dots) {
-    cv::Mat whitePixels;
-    std::vector<cv::Point> result;
-    cv::findNonZero(dots, whitePixels);
-    for (auto i = 0; i < whitePixels.total(); i++) {
-        result.push_back(whitePixels.at<cv::Point>(i));
-    }
-    return result;
-}
-
-std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Point> corners, cv::Mat dots) {
+/*
+ * This where a lot of the magic happens
+ *
+ * Given the four possible corner points
+ * Find points that are on a possible line starting at that corner point and between the other corner point.
+ *
+ * Set the scene: Image is at an angle.
+ * Given the top most point, and the left most point look for points in between those two points
+ *
+ * This is done by looking for points that have a higher X than the left most point, but smaller X than the top most point
+ * and higher Y than the top point and lower Y than the left most point.
+ *
+ * This creates a sort of a rectangle where the top and left most points are in the opposite corners. All of the possible
+ * points will lie within this rectangle.
+ *
+ * Better explanation ill be in the report.
+ */
+std::vector<std::vector<cv::Point>> Transformer::FindClosestPoints(std::vector<cv::Point> corners, cv::Mat dots) {
     std::vector<std::vector<cv::Point>> result(4);
     std::vector<cv::Point> topLine, botLine, leftLine, rightLine;
     std::vector<cv::Point> points = WhiteToPoints(dots);
@@ -165,18 +167,14 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
     for (size_t i = 0; i < corners.size(); i++) {
         switch (i) {
             case TOP_MOST_POINT:
-//                topLine.push_back(corners[TOP_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
-                    // Check that current point is not TOP_MOST or RIGHT_MOST
                     if ((currentPoint.x != corners[TOP_MOST_POINT].x) &&
                         (currentPoint.y != corners[TOP_MOST_POINT].y)) {
                         if ((currentPoint.x != corners[RIGHT_MOST_POINT].x) &&
                             (currentPoint.y != corners[RIGHT_MOST_POINT].y)) {
-                            // Check that current points X is > TOP_MOST && < RIGHT_MOST
                             if ((currentPoint.x > corners[TOP_MOST_POINT].x) &&
                                 (currentPoint.x < corners[RIGHT_MOST_POINT].x)) {
-                                // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y > corners[TOP_MOST_POINT].y) &&
                                     (currentPoint.y < corners[RIGHT_MOST_POINT].y)) {
                                     topLine.push_back(currentPoint);
@@ -185,23 +183,16 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                         }
                     }
                 }
-//                topLine.push_back(corners[RIGHT_MOST_POINT]);
                 break;
             case LEFT_MOST_POINT:
-                //TODO: Fix this, bad logic
-//                leftLine.push_back(corners[LEFT_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
-                    // Check that current point is not TOP_MOST
                     if ((currentPoint.x != corners[TOP_MOST_POINT].x) &&
                         (currentPoint.y != corners[TOP_MOST_POINT].y)) {
-                        // or LEFT_MOST
                         if ((currentPoint.x != corners[LEFT_MOST_POINT].x) &&
                             (currentPoint.y != corners[LEFT_MOST_POINT].y)) {
-                            // Check that current points X is > LEFT_MOST && < TOP_MOST
                             if ((currentPoint.x > corners[LEFT_MOST_POINT].x) &&
                                 (currentPoint.x < corners[TOP_MOST_POINT].x)) {
-                                // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y < corners[LEFT_MOST_POINT].y) &&
                                     (currentPoint.y > corners[TOP_MOST_POINT].y)) {
                                     leftLine.push_back(currentPoint);
@@ -210,21 +201,16 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                         }
                     }
                 }
-//                leftLine.push_back(corners[TOP_MOST_POINT]);
                 break;
             case BOTTOM_MOST_POINT:
-//                botLine.push_back(corners[BOTTOM_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
-                    // Check that current point is not BOT_MOST or LEFT_MOST
                     if ((currentPoint.x != corners[BOTTOM_MOST_POINT].x) &&
                         (currentPoint.y != corners[BOTTOM_MOST_POINT].y)) {
                         if ((currentPoint.x != corners[LEFT_MOST_POINT].x) &&
                             (currentPoint.y != corners[LEFT_MOST_POINT].y)) {
-                            // Check that current points X is > LEFT_MOST && < TOP_MOST
                             if ((currentPoint.x < corners[BOTTOM_MOST_POINT].x) &&
                                 (currentPoint.x > corners[LEFT_MOST_POINT].x)) {
-                                // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y > corners[LEFT_MOST_POINT].y) &&
                                     (currentPoint.y < corners[BOTTOM_MOST_POINT].y)) {
                                     botLine.push_back(currentPoint);
@@ -233,21 +219,16 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                         }
                     }
                 }
-//                botLine.push_back(corners[LEFT_MOST_POINT]);
                 break;
             case RIGHT_MOST_POINT:
-//                rightLine.push_back(corners[BOTTOM_MOST_POINT]);
                 for (size_t j = 0; j < points.size(); j++) {
                     currentPoint = points[j];
-                    // Check that current point is not BOT_MOST or LEFT_MOST
                     if ((currentPoint.x != corners[BOTTOM_MOST_POINT].x) &&
                         (currentPoint.y != corners[BOTTOM_MOST_POINT].y)) {
                         if ((currentPoint.x != corners[RIGHT_MOST_POINT].x) &&
                             (currentPoint.y != corners[RIGHT_MOST_POINT].y)) {
-                            // Check that current points X is > LEFT_MOST && < TOP_MOST
                             if ((currentPoint.x > corners[BOTTOM_MOST_POINT].x) &&
                                 (currentPoint.x < corners[RIGHT_MOST_POINT].x)) {
-                                // Check that current points Y is > TOP_MOST && < RIGHT_MOST
                                 if ((currentPoint.y < corners[BOTTOM_MOST_POINT].y) &&
                                     (currentPoint.y > corners[RIGHT_MOST_POINT].y)) {
                                     rightLine.push_back(currentPoint);
@@ -256,7 +237,6 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
                         }
                     }
                 }
-//                rightLine.push_back(corners[RIGHT_MOST_POINT]);
                 break;
         }
     }
@@ -267,22 +247,11 @@ std::vector<std::vector<cv::Point>> Transformer::FindClosest(std::vector<cv::Poi
     return result;
 }
 
-cv::Mat Transformer::Crop(cv::Mat src, cv::Mat ref) {
-    cv::Mat res;
-    cv::Rect cropRect(0, 0, ref.cols, ref.rows);
-    res = src(cropRect);
-    return res;
-}
-
-cv::Mat Transformer::Sharpen(cv::Mat src) {
-    cv::Mat img32, lap, sharp, res;
-    src.convertTo(img32, CV_32F);
-    cv::Laplacian(src, lap, CV_32F, 3);
-    sharp = img32 - (0.3 * lap);
-    sharp.convertTo(res, CV_8U);
-    return res;
-}
-
+/*
+ * Given the output of the above function find a line that best fits those points using Hubers method (No real reason,
+ * it just worked better than the others.
+ *
+ */
 std::vector<cv::Vec4f> Transformer::LinesOfBestFit(std::vector<std::vector<cv::Point>> lines) {
 
     std::vector<cv::Vec4f> result;
@@ -294,63 +263,51 @@ std::vector<cv::Vec4f> Transformer::LinesOfBestFit(std::vector<std::vector<cv::P
         cv::Vec4f line;
         cv::fitLine(current, line, CV_DIST_HUBER, 0, 0.01, 0.01);
         result.push_back(line);
-//        cv::fitLine(current, line, CV_DIST_HUBER, 2, 0.1, 0.1);
-//        result.push_back(line);
-//        cv::fitLine(current, line, CV_DIST_HUBER, 04, 0.0001, 0.0001);
-//        result.push_back(line);
     }
     return result;
 }
 
+/*
+ * Given a line, which is define by a point and a direction vector, draw it on the image.
+ * Sinde the direction vector is only pointing in one way draw the line in the negative
+ * direction too
+ *
+ * point has x as [2] and y as [3] in the array
+ * direction vector for x is [0] and [1] for y
+ * t is a scalar (Length of line)
+ *
+ * Draw the line between (x,y) and (x+ xd*t, y + yd*t) where xd and yd are the directions
+ * fitLine documentation in OpenCV has a better explanation
+ */
 cv::Mat DrawLineItr(cv::Mat src, cv::Vec4f vect, int t, cv::Scalar color) {
     cv::line(src, cv::Point(vect[2], vect[3]),
              cv::Point(vect[2] + vect[0] * t, vect[3] + vect[1] * t),
-             color);
+             color,3);
     cv::line(src, cv::Point(vect[2], vect[3]),
              cv::Point(vect[2] + vect[0] * (t * -1), vect[3] + vect[1] * (t * -1)),
-             color);
+             color,3);
     return src;
 }
 
+/*
+ * Draw all of the lines using avove method
+ */
 cv::Mat Transformer::DrawVectorLines(cv::Mat src, std::vector<cv::Vec4f> vecs) {
+    cv::Mat r;
+    src.copyTo(r);
     int t = 1000;
     for (size_t i = 0; i < vecs.size(); i++) {
         cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-        src = DrawLineItr(src, vecs[i], t, color);
+        src = DrawLineItr(r, vecs[i], t, color);
 
     }
-    return src;
+    return r;
 }
 
-cv::Mat Transformer::DrawLine(cv::Mat img, std::vector<std::vector<cv::Point>> lines) {
-    debugMessage("Drawing");
-    cv::Scalar color;
-    for (size_t i = 0; i < lines.size(); i++) {
-        if (i == 0) {
-            // red line
-            color = cv::Scalar(0, 0, 255);
-        } else if (i == 1) {
-            //blue
-            color = cv::Scalar(255, 0, 0);
-        } else if (i == 2) {
-            //green
-            color = cv::Scalar(0, 255, 0);
-        } else if (i == 3) {
-            // yellow
-            color = cv::Scalar(0, 255, 255);
-        } else {
-            color = cv::Scalar(255, 255, 0);
-        }
-        if (lines[i].size() > 2) {
-            for (size_t j = 0; j < lines[i].size() - 1; j++) {
-                cv::circle(img, lines[i][j], 5, color, -1);
-            }
-        }
-    }
-    return img;
-}
-
-std::vector<cv::Point> Transformer::FindCornersFromMoments(std::vector<cv::Point> momentCentres) {
+/*
+ * given moments, find the corners. The function name explains it all, or so I hope.
+ */
+std::vector<cv::Point> Transformer::FindApproximateCornersFromCentresOfComponents(std::vector<cv::Point> momentCentres) {
     std::vector<cv::Point> result(4);
     int highestX = 0, highestY = 0, lowestX = std::numeric_limits<int>::max(), lowestY = std::numeric_limits<int>::max();
     for (size_t i = 0; i < momentCentres.size(); i++) {
@@ -374,61 +331,34 @@ std::vector<cv::Point> Transformer::FindCornersFromMoments(std::vector<cv::Point
     }
     return result;
 }
-
-cv::Point Transformer::Intersection(cv::Vec4f a, cv::Vec4f b,int t) {
-    cv::Point as(a[2], a[3]), bs(b[2], b[3]);
-    cv::Point ad(a[2] + a[0] * t, a[3] + a[1] * t);
-    cv::Point bd(b[2] + b[0] * t, b[3] + b[1] * t);
-
-//    dx = bs.x - as.x
-//    dy = bs.y - as.y
-//    det = bd.x * ad.y - bd.y * ad.x
-//    u = (dy * bd.x - dx * bd.y) / det
-//    v = (dy * ad.x - dx * ad.y) / det
-
-    double dx = bs.x - as.x;
-    double dy = bs.y - as.y;
-    double det = bd.x * ad.y - bd.y * ad.x;
-    double u = (dy * bd.x - dx * bd.y) / det;
-    double v = (dy * ad.x - dx * ad.y) /det;
-    if(u * v <0){
-        debugMessage("These lines do not intersec");
-        return cv::Point(-1,-1);
-    }
-    debugMessage("Caculated intersection at: (" + std::to_string(u) + "," + std::to_string(v) +")");
-    return cv::Point(u,v);
+/*
+ * Get the intersection of two rays a, b
+ *
+ * where a ray is degine as a point and a direction vector (normalized)
+ */
+cv::Point Transformer::Intersection(cv::Vec4f a, cv::Vec4f b) {
+    double a0x = a[2];
+    double a0y = a[3];
+    double b0x = b[2];
+    double b0y = b[3];
+    double adx = a[0];
+    double ady = a[1];
+    double bdx = b[0];
+    double bdy = b[1];
+    double t1 = ((bdx * (a0y - b0y) - bdy * (a0x - b0x))) / (adx * bdy - ady * bdx);
+    cv::Point plz2work((int) (a[2] + (a[0] * t1)), (int) (a[3] + (a[1] * t1)));
+    return plz2work;
 }
 
+/*
+ * Given 4 rays that define the page, find the 4 intersections of corners
+ * Assumes 4 lines were passed in.
+ */
 std::vector<cv::Point> Transformer::FindIntersections(cv::Mat src, std::vector<cv::Vec4f> rays) {
-//    for(size_t i = 0; i < rays.size(); i++){
-//    cv::circle(src,Intersection(rays[0],rays[2],1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[0],rays[2],-1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[2],rays[1],1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[2],rays[1],-1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[1],rays[3],1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[1],rays[3],-1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[3],rays[0],1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[3],rays[0],-1),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[0],rays[2],1000),5,cv::a:Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[0],rays[3]),5,cv::Scalar(0,0,255),-1);
-//
-//    cv::circle(src,Intersection(rays[1],rays[1]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[1],rays[2]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[1],rays[3]),5,cv::Scalar(0,0,255),-1);
-//
-//
-//    cv::circle(src,Intersection(rays[2],rays[1]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[2],rays[2]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[2],rays[3]),5,cv::Scalar(0,0,255),-1);
-//
-//    cv::circle(src,Intersection(rays[3],rays[1]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[3],rays[2]),5,cv::Scalar(0,0,255),-1);
-//    cv::circle(src,Intersection(rays[3],rays[3]),5,cv::Scalar(0,0,255),-1);
-//    }
-//    ShowImage("rays",src);
-//    2 = topLine;
-//    3 = botLine;
-//    1 = leftLine;
-//    0 = rightLine;
-    return std::vector<cv::Point>();
+    std::vector<cv::Point> result(4);
+    result[TOP_MOST_POINT] = Intersection(rays[2],rays[1]);
+    result[LEFT_MOST_POINT] = Intersection(rays[1],rays[3]);
+    result[BOTTOM_MOST_POINT] = Intersection(rays[3],rays[0]);
+    result[RIGHT_MOST_POINT] = Intersection(rays[0],rays[2]);
+    return  result;
 }

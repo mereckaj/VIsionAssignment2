@@ -8,6 +8,10 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include "Headers/Utils.hpp"
+
+/*
+ * KDH's code
+ */
 cv::Mat StretchImage( cv::Mat& image )
 {
     cv::Mat result = image.clone();
@@ -34,6 +38,9 @@ cv::Mat StretchImage( cv::Mat& image )
 
     return result;
 }
+/*
+ * KDH's code
+ */
 cv::Mat JoinImagesHorizontally(cv::Mat image1, cv::Mat image2, int spacing, int scale)
 {
     cv::Size s;
@@ -62,20 +69,77 @@ cv::Mat JoinImagesHorizontally(cv::Mat image1, cv::Mat image2, int spacing, int 
     cv::resize(result,result,s);
     return result;
 }
+/*
+ * KDH's code
+ */
+cv::Mat JoinImagesVertically( cv::Mat& image1,cv::Mat& image2, int spacing, int scale )
+{
+    cv::Size s;
+    cv::Mat result( image1.rows + image2.rows + spacing,
+                (image1.cols > image2.cols) ? image1.cols : image2.cols,
+                image1.type() );
+    result.setTo(cv::Scalar(255,255,255));
+    cv::Mat imageROI;
+    imageROI = result(cv::Rect(0,0,image1.cols,image1.rows));
+    image1.copyTo(imageROI);
+    if (spacing > 0)
+    {
+        imageROI = result(cv::Rect(0,image1.rows,image1.cols,spacing));
+        imageROI.setTo(cv::Scalar(255,255,255));
+    }
+    imageROI = result(cv::Rect(0,image1.rows+spacing,image2.cols,image2.rows));
+    image2.copyTo(imageROI);
+    if(scale==0){
+        s = cv::Size(result.cols,result.rows);
+    }else if(scale < 1){
+        scale = scale * -1;
+        s = cv::Size((result.cols/scale),(result.rows/scale));
+    }else if(scale > 1){
+        s = cv::Size((result.cols*scale),(result.rows*scale));
+    }
+    cv::resize(result,result,s);
+    return result;
+}
+/*
+ * Again, a wrapper for an OpenCV function since their functions are so bad.
+ *
+ * Creates a window with the image in it and a specified title.
+ * Makes sure the image is at the left most corner
+ * Wait for a keyclick and then destroy the image window
+ */
 void ShowImage(std::string title,cv::Mat src){
     cv::imshow(title,src);
     cv::moveWindow(title,0,0);
     cv::waitKey(0);
     cv::destroyWindow(title);
 }
-void ShowImage(std::string title,cv::Mat src,cv::Mat src2){
-    ShowImage(title, JoinImagesHorizontally(src, src2, 5, 0));
-}
-void ShowImage(std::string title,cv::Mat src,cv::Mat src2,cv::Size scale){
-    cv::Mat joinedScaled,joined = JoinImagesHorizontally(src, src2, 5, 0);
-    cv::resize(joined,joinedScaled,scale,0,0,CV_INTER_NN);
-    ShowImage(title,joinedScaled);
-}
+/*
+ * printing out nice messages without having to drop that cout << << shit all over the place (Should rename C++ to C--)
+ */
 void debugMessage(std::string s){
     std::cout << s << std::endl;
+}
+/*
+ * Given a location, a vector of file names loads those into the program
+ */
+cv::Mat * LoadImages(const std::string imageLocation,std::vector<std::string> imageNames){
+
+    debugMessage("Loading: " + std::to_string(imageNames.size()) + " images from: " + imageLocation);
+
+    cv::Mat *images = new cv::Mat[imageNames.size()];
+    for (size_t i = 0; i < imageNames.size(); i++) {
+
+        std::string filename(imageLocation);
+        filename.append(imageNames[i]);
+        images[i] = cv::imread(filename, cv::IMREAD_ANYCOLOR);
+
+        if (images[i].empty()) {
+            std::cerr << "Failed to load image: " << filename << std::endl;
+            exit(EXIT_FAILURE);
+        }else{
+
+            std::cout << "Successfully loaded image: " << filename << std::endl;
+        }
+    }
+    return images;
 }

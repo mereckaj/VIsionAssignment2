@@ -32,7 +32,7 @@ public:
 
     cv::Mat Sharpen(cv::Mat src);
 
-    std::vector<std::vector<cv::Point>> FindClosest(std::vector<cv::Point> corners, cv::Mat dots);
+    std::vector<std::vector<cv::Point>> FindClosestPoints(std::vector<cv::Point> corners, cv::Mat dots);
 
     cv::Mat DrawLine(cv::Mat mat, std::vector<std::vector<cv::Point>> vector);
 
@@ -40,7 +40,7 @@ public:
 
     cv::Mat DrawVectorLines(cv::Mat src,std::vector<cv::Vec4f> vecs);
 
-    std::vector<cv::Point> FindCornersFromMoments(std::vector<cv::Point> moments);
+    std::vector<cv::Point> FindApproximateCornersFromCentresOfComponents(std::vector<cv::Point> moments);
 
     std::vector<cv::Point> FindIntersections(cv::Mat cv, std::vector<cv::Vec4f> rays);
 
@@ -52,6 +52,6 @@ private:
 
     std::vector<cv::Point> WhitePixelsToPoints(cv::Mat dots);
 
-    cv::Point Intersection(cv::Vec4f a, cv::Vec4f b, int t);
+    cv::Point Intersection(cv::Vec4f a, cv::Vec4f b);
 };
 #endif //VISIONASSIGNMENT2_TRANSFORMER_H
